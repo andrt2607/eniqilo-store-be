@@ -12,7 +12,8 @@ type Service struct {
 	validator *validator.Validate
 	cfg       *cfg.Cfg
 
-	User *UserService
+	User    *UserService
+	Product *ProductService
 	// Cat   *CatService
 	// Match *MatchService
 }
@@ -24,6 +25,7 @@ func NewService(repo *repo.Repo, validator *validator.Validate, cfg *cfg.Cfg) *S
 	service.cfg = cfg
 
 	service.User = newUserService(repo, validator, cfg)
+	service.Product = newProductService(repo, validator, cfg)
 	// service.Cat = newCatService(repo, validator, cfg)
 	// service.Match = newMatchService(repo, validator, cfg)
 
