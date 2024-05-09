@@ -17,6 +17,6 @@ CREATE TABLE IF NOT EXISTS product (
 );
 
 CREATE INDEX idx_id_product on product(id);
-CREATE INDEX idx_sku_product on product(sku);
+CREATE UNIQUE INDEX idx_sku_product_unique on product(sku);
 CREATE INDEX idx_created_at_desc_deleted_at_null_product ON product (created_at DESC) WHERE deleted_at IS NULL;
 CREATE INDEX idx_stock_created_at_desc_deleted_at_null_product ON product (stock ASC, created_at DESC) WHERE deleted_at IS NULL AND is_available = True;
