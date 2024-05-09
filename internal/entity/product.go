@@ -3,7 +3,7 @@ package entity
 type Product struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
-	Sku         string `json:"sku"`
+	SKU         string `json:"sku"`
 	Category    string `json:"category"`
 	ImageURL    string `json:"image_url"`
 	Notes       string `json:"notes"`

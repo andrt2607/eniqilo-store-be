@@ -31,6 +31,7 @@ func (h *Handler) registRoute() {
 	var tokenAuth *jwtauth.JWTAuth = jwtauth.New("HS256", []byte(h.cfg.JWTSecret), nil, jwt.WithAcceptableSkew(30*time.Second))
 
 	userH := newUserHandler(h.service.User)
+	productH := newProductHandler(h.service.Product)
 	// catH := newCatHandler(h.service.Cat)
 	// matchH := newMatchHandler(h.service.Match)
 
@@ -38,6 +39,8 @@ func (h *Handler) registRoute() {
 
 	r.Post("/v1/user/register", userH.Register)
 	r.Post("/v1/user/login", userH.Login)
+
+	r.Post("/v1/product", productH.Create)
 
 	// protected route
 	r.Group(func(r chi.Router) {
