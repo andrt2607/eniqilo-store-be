@@ -31,10 +31,16 @@ func (c *CheckoutService) PostCheckout(ctx context.Context, body dto.ReqCheckout
 		return http.StatusBadRequest, global_constant.FAIL_VALIDATE_REQ_BODY, err.Error(), err
 	}
 
-	responseCode, err := c.repo.Checkout.PostCheckout(ctx, body)
+	responseCodeValidation, err := c.repo.Checkout.PostValidateCheckout(ctx, body)
 	if err != nil {
 		ierr.LogErrorWithLocation(err)
-		return responseCode, global_constant.FAIL_VALIDATE_REQ_BODY, err.Error(), err
+		return responseCodeValidation, global_constant.FAIL_VALIDATE_REQ_BODY, err.Error(), err
+	}
+
+	responseCode, errPost := c.repo.Checkout.PostCheckout(ctx, body)
+	if errPost != nil {
+		ierr.LogErrorWithLocation(errPost)
+		return responseCode, global_constant.FAIL_VALIDATE_REQ_BODY, errPost.Error(), errPost
 	}
 
 	return responseCode, global_constant.SUCCESS, "", nil
@@ -49,6 +55,7 @@ func (u *CheckoutService) GetCheckout(ctx context.Context, param dto.ReqParamChe
 
 	res, err := u.repo.Checkout.GetCheckout(ctx, param)
 	if err != nil {
+		ierr.LogErrorWithLocation(err)
 		return nil, err
 	}
 

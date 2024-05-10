@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	// "log"
 	"net/http"
 	"strings"
 
@@ -26,7 +28,7 @@ func newCheckoutRepo(conn *pgxpool.Pool) *checkoutRepo {
 
 func (cr *checkoutRepo) PostValidateCheckout(ctx context.Context, checkout dto.ReqCheckoutPost) (int, error) {
 	q := `SELECT id FROM customer where id = $1`
-	err := cr.conn.QueryRow(ctx, q,
+	_, err := cr.conn.Query(ctx, q,
 		checkout.CustomerId)
 
 	if err != nil {
@@ -36,20 +38,17 @@ func (cr *checkoutRepo) PostValidateCheckout(ctx context.Context, checkout dto.R
 
 	var TotalCharge int
 	for _, element := range checkout.ProductDetails {
-		// element is the element from someSlice for where we are
-		// var Charge int
 		data := dto.ResPostValidateCheckout{}
-		// var stock int
 		q := `SELECT price*$2 as charge, stock-$2 as stock FROM product where id = $1 and is_available = true`
 
 		err := cr.conn.QueryRow(ctx, q,
-			element.ProductId, element.Quantity).Scan(&data)
+			element.ProductId, element.Quantity).Scan(&data.Charge, &data.Stock)
 
 		if err != nil {
 			return http.StatusNotFound, err
 		}
 
-		if data.Stock <= 0 {
+		if data.Stock < 0 {
 			err_message := fmt.Sprintf("one of productIds (%v) stock is not enough (stock %v need %v)", element.ProductId, data.Stock, element.Quantity)
 			return http.StatusBadRequest, errors.New(err_message)
 		}
@@ -71,11 +70,11 @@ func (cr *checkoutRepo) PostValidateCheckout(ctx context.Context, checkout dto.R
 
 func (cr *checkoutRepo) PostCheckout(ctx context.Context, checkout dto.ReqCheckoutPost) (int, error) {
 
-	qi := `INSERT INTO order_product (customer_id, paid, change, created_at)
+	qiProduct := `INSERT INTO order_product (customer_id, paid, change, created_at)
 	VALUES ($1, $2, $3, now()) RETURNING id`
 
 	var OrderID string
-	err := cr.conn.QueryRow(ctx, qi,
+	err := cr.conn.QueryRow(ctx, qiProduct,
 		checkout.CustomerId, checkout.Paid, checkout.Change).Scan(&OrderID)
 
 	if err != nil {
@@ -89,8 +88,17 @@ func (cr *checkoutRepo) PostCheckout(ctx context.Context, checkout dto.ReqChecko
 	}
 
 	for _, element := range checkout.ProductDetails {
+
+		qiDetail := `INSERT INTO order_detail (order_id, product_id, product_order_quantity) VALUES($1, $2, $3)`
+		_, err := cr.conn.Exec(ctx, qiDetail,
+			OrderID, element.ProductId, element.Quantity)
+
+		if err != nil {
+			return http.StatusInternalServerError, err
+		}
+
 		qu := `UPDATE product SET stock = stock - $2, updated_at = now() WHERE id = $1`
-		_, err := cr.conn.Exec(ctx, qu,
+		_, err = cr.conn.Exec(ctx, qu,
 			element.ProductId, element.Quantity)
 
 		if err != nil {
@@ -110,8 +118,10 @@ func (cr *checkoutRepo) GetCheckout(ctx context.Context, param dto.ReqParamCheck
 		query.WriteString(fmt.Sprintf("AND customer_id = '+%s' ", param.CustomerId))
 	}
 
-	if param.CreatedAt == "desc" || param.CreatedAt == "asc" {
-		query.WriteString(fmt.Sprintf("ORDER BY created_at %s) ", param.CreatedAt))
+	if param.CreatedAt == "asc" {
+		query.WriteString("ORDER BY created_at ASC ")
+	} else {
+		query.WriteString("ORDER BY created_at DESC ")
 	}
 
 	// limit and offset
@@ -121,10 +131,7 @@ func (cr *checkoutRepo) GetCheckout(ctx context.Context, param dto.ReqParamCheck
 
 	query.WriteString(fmt.Sprintf("LIMIT %d OFFSET %d", param.Limit, param.Offset))
 
-	// show query
-	fmt.Println(query.String())
-
-	rows, err := cr.conn.Query(ctx, query.String()) // Replace $1 with sub
+	rows, err := cr.conn.Query(ctx, query.String())
 	if err != nil {
 		return nil, err
 	}
@@ -158,12 +165,9 @@ func (cr *checkoutRepo) GetCheckout(ctx context.Context, param dto.ReqParamCheck
 func (cr *checkoutRepo) GetOrderDetail(ctx context.Context, orderId string) ([]entity.CheckoutDetail, error) {
 	var query strings.Builder
 
-	query.WriteString("SELECT id, order_id, product_id, product_order_quantity FROM order_detail WHERE order_id = $1")
+	query.WriteString("SELECT product_id, product_order_quantity FROM order_detail WHERE order_id = $1")
 
-	// show query
-	fmt.Println(query.String())
-
-	rows, err := cr.conn.Query(ctx, query.String(), orderId) // Replace $1 with sub
+	rows, err := cr.conn.Query(ctx, query.String(), orderId)
 	if err != nil {
 		return nil, err
 	}
