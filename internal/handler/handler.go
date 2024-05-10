@@ -48,26 +48,12 @@ func (h *Handler) registRoute() {
 		r.Use(jwtauth.Authenticator(tokenAuth))
 
 		r.Get("/v1/product", productHandler.GetProduct)
-		// r.Patch("/v1/user", userH.UpdateAccount)
-
-		// r.Post("/v1/cat", catH.AddCat)
-		// r.Get("/v1/cat", catH.GetCat)
-		// r.Get("/v1/cat/{id}", catH.GetCatByID)
-		// r.Put("/v1/cat/{id}", catH.UpdateCat)
-		// r.Delete("/v1/cat/{id}", catH.DeleteCat)
-
 		r.Post("/v1/product", productHandler.Create)
+		r.Delete("/v1/product/{id}", productHandler.DeleteProduct)
 
 		r.Post("/v1/customer/register", customerHandler.Register)
 		r.Get("/v1/customer", customerHandler.GetCustomer)
 		r.Post("/v1/product/checkout", checkoutHandler.PostCheckout)
 		r.Get("/v1/product/checkout", checkoutHandler.GetCheckout)
-
-		// r.Post("/v1/cat/match", matchH.MatchCat)
-		// r.Get("/v1/cat/match", matchH.GetMatch)
-
-		// r.Post("/v1/cat/match/approve", matchH.ApproveMatch)
-		// r.Post("/v1/cat/match/reject", matchH.RejectMatch)
-		// r.Delete("/v1/cat/match/{id}", matchH.DeleteMatch)
 	})
 }

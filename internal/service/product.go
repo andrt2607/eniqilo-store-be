@@ -39,7 +39,6 @@ func (p *ProductService) Create(ctx context.Context, body dto.ReqCreateProduct) 
 	return http.StatusOK, global_constant.SUCCESS_REGISTER_USER, product, nil
 }
 
-
 func (p *ProductService) Get(ctx context.Context, param dto.ReqParamProductGet) (int, string, interface{}, error) {
 	err := p.validator.Struct(param)
 	if err != nil {
@@ -68,4 +67,15 @@ func (p *ProductService) GetProductSKU(ctx context.Context, param dto.ReqParamPr
 
 	return res, nil
 
+}
+
+func (p *ProductService) DeleteProduct(ctx context.Context, id string) (int, string, interface{}, error) {
+
+	err := p.repo.Product.DeleteProduct(ctx, id)
+	if err != nil {
+		ierr.LogErrorWithLocation(err)
+		return http.StatusNotFound, global_constant.FAIL_DELETE_PRODUCT, global_constant.FAIL_DELETE_PRODUCT, err
+	}
+
+	return http.StatusOK, global_constant.SUCCESS, global_constant.SUCCESS_DELETE_PRODUCT, nil
 }
