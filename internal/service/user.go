@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"eniqilo-store-be/internal/cfg"
@@ -26,19 +27,26 @@ func newUserService(repo *repo.Repo, validator *validator.Validate, cfg *cfg.Cfg
 }
 
 func (u *UserService) Register(ctx context.Context, body dto.ReqRegister) (int, string, interface{}, error) {
+	//check if phone number already exist
+	checkedUser, _ := u.repo.User.GetByPhoneNumber(ctx, body.PhoneNumber)
+	if checkedUser.PhoneNumber == body.PhoneNumber {
+		existPhoneError := errors.New("phone number already exist")
+		ierr.LogErrorWithLocation(existPhoneError)
+		return http.StatusConflict, global_constant.EXISTING_PHONE_NUMBER, existPhoneError.Error(), existPhoneError
+	}
 	res := dto.ResRegister{}
-
+	//register custom validation phone
+	errPhone := u.validator.RegisterValidation("phone", dto.PhoneValidation)
+	if errPhone != nil {
+		ierr.LogErrorWithLocation(errPhone)
+		return http.StatusBadRequest, global_constant.FAIL_VALIDATE_REQ_BODY, errPhone.Error(), errPhone
+	}
+	//validate request body
 	err := u.validator.Struct(body)
 	if err != nil {
 		ierr.LogErrorWithLocation(err)
 		return http.StatusBadRequest, global_constant.FAIL_VALIDATE_REQ_BODY, err.Error(), err
 	}
-
-	// perlu parse phone
-	// _, err = mail.ParseAddress(body.Email)
-	// if err != nil {
-	// 	return res, ierr.ErrBadRequest
-	// }
 
 	user := body.ToEntity(u.cfg.BCryptSalt)
 	userID, err := u.repo.User.Insert(ctx, user)
@@ -46,14 +54,12 @@ func (u *UserService) Register(ctx context.Context, body dto.ReqRegister) (int, 
 		ierr.LogErrorWithLocation(err)
 		return http.StatusInternalServerError, global_constant.FAIL_VALIDATE_REQ_BODY, err.Error(), err
 	}
-
+	//generate token
 	token, _, err := auth.GenerateToken(u.cfg.JWTSecret, 8, auth.JwtPayload{Sub: userID})
 	if err != nil {
 		ierr.LogErrorWithLocation(err)
 		return http.StatusInternalServerError, global_constant.INTERNAL_SERVER_ERROR, err.Error(), err
 	}
-
-	// res.Email = body.Email
 	res.PhoneNumber = body.PhoneNumber
 	res.Name = body.Name
 	res.AccessToken = token
@@ -66,26 +72,23 @@ func (u *UserService) Register(ctx context.Context, body dto.ReqRegister) (int, 
 }
 
 func (u *UserService) Login(ctx context.Context, body dto.ReqLogin) (int, string, interface{}, error) {
-	res := dto.ResLogin{}
-
+	//validate request body
 	err := u.validator.Struct(body)
 	if err != nil {
 		ierr.LogErrorWithLocation(err)
-		return http.StatusBadRequest, global_constant.INTERNAL_SERVER_ERROR, err.Error(), err
+		return http.StatusBadRequest, global_constant.FAIL_VALIDATE_REQ_BODY, err.Error(), err
 	}
 
-	// perlu parse phone
-	// _, err = mail.ParseAddress(body.Email)
-	// if err != nil {
-	// 	return res, ierr.ErrBadRequest
-	// }
-
+	//check if phone number not found
 	user, err := u.repo.User.GetByPhoneNumber(ctx, body.PhoneNumber)
 	if err != nil {
-		ierr.LogErrorWithLocation(err)
-		return http.StatusNotFound, global_constant.NOT_FOUND, err.Error(), err
+		if err.Error() == "no rows in result set" {
+			ierr.LogErrorWithLocation(err)
+			return http.StatusNotFound, global_constant.NOT_FOUND, global_constant.PHONE_NUMBER_NOT_FOUND, err
+		}
 	}
 
+	//compare password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password)); err != nil {
 		if err == bcrypt.ErrMismatchedHashAndPassword {
 			ierr.LogErrorWithLocation(err)
@@ -93,35 +96,15 @@ func (u *UserService) Login(ctx context.Context, body dto.ReqLogin) (int, string
 		}
 		return http.StatusBadRequest, global_constant.WRONG_PASSWORD, err.Error(), err
 	}
-
+	//generate token
 	token, _, err := auth.GenerateToken(u.cfg.JWTSecret, 8, auth.JwtPayload{Sub: user.ID})
 	if err != nil {
 		return http.StatusInternalServerError, global_constant.FAIL_GENERATE_TOKEN, err.Error(), err
 	}
-
+	res := dto.ResLogin{}
 	res.PhoneNumber = user.PhoneNumber
-	// res.Email = user.Email
 	res.Name = user.Name
 	res.AccessToken = token
 
 	return http.StatusOK, global_constant.SUCCESS_LOGIN_USER, res, nil
 }
-
-// func (u *UserService) UpdateAccount(ctx context.Context, body dto.ReqUpdateAccount, sub string) error {
-// 	err := u.validator.Struct(body)
-// 	if err != nil {
-// 		return ierr.ErrBadRequest
-// 	}
-
-// 	if body.ImageURL == "http://incomplete" {
-// 		return ierr.ErrBadRequest
-// 	}
-
-// 	err = u.repo.User.LookUp(ctx, sub)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	err = u.repo.User.UpdateAccount(ctx, sub, body.Name, body.ImageURL)
-// 	return err
-// }

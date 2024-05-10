@@ -37,8 +37,8 @@ func (h *Handler) registRoute() {
 
 	r.Use(middleware.RedirectSlashes)
 
-	r.Post("/v1/user/register", userH.Register)
-	r.Post("/v1/user/login", userH.Login)
+	r.Post("/v1/staff/register", userH.Register)
+	r.Post("/v1/staff/login", userH.Login)
 
 	r.Post("/v1/product", productH.Create)
 

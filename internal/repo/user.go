@@ -77,9 +77,6 @@ func (u *userRepo) GetByPhoneNumber(ctx context.Context, cred string) (entity.Us
 	user.PhoneNumber = phoneNumber.String
 
 	if err != nil {
-		if err.Error() == "no rows in result set" {
-			return user, ierr.ErrNotFound
-		}
 		return user, err
 	}
 
