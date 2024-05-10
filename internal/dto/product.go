@@ -1,5 +1,21 @@
 package dto
 
+type Category string
+
+const (
+	Clothing    Category = "Clothing"
+	Accessories Category = "Accessories"
+	Footwear    Category = "Footwear"
+	Beverages   Category = "Beverages"
+)
+
+type Sort string
+
+const (
+	ASC  Sort = "ASC"
+	DESC Sort = "DESC"
+)
+
 type (
 	ReqCreateProduct struct {
 		Name        string `json:"name" validate:"required,min=1,max=30"`
@@ -18,6 +34,32 @@ type (
 		CreatedAt string `json:"createdAt" validate:"omitempty,iso8601"`
 	}
 
+	ResGetProduct struct {
+		ID          string `json:"id"`
+		Name        string `json:"name"`
+		SKU         string `json:"sku"`
+		Category    string `json:"category"`
+		ImageURL    string `json:"imageUrl"`
+		Notes       string `json:"notes"`
+		Price       int    `json:"price"`
+		Stock       int    `json:"stock"`
+		Location    string `json:"location"`
+		IsAvailable bool   `json:"isAvailable"`
+		CreatedAt   string `json:"createdAt"`
+	}
+
+	ReqParamProductGet struct {
+		ID          string   `json:"id"`
+		Limit       int      `json:"limit"`
+		Offset      int      `json:"offset"`
+		Name        string   `json:"name"`
+		IsAvailable string   `json:"isAvailable"`
+		Category    Category `json:"category"`
+		Sku         string   `json:"sku"`
+		Price       Sort     `json:"price"`
+		InStock     string   `json:"inStock"`
+		CreatedAt   Sort     `json:"createdAt"`
+  }
 	ReqParamProductSKUGet struct {
 		Name      string `json:"phoneNumber"`
 		SKU       string `json:"sku"`
@@ -38,5 +80,6 @@ type (
 		Price     int    `json:"price"`
 		Location  string `json:"location"`
 		CreatedAt string `json:"createdAt"`
+
 	}
 )

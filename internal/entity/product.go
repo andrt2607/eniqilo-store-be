@@ -8,6 +8,7 @@ type Product struct {
 	ImageURL    string `json:"image_url"`
 	Notes       string `json:"notes"`
 	Price       int    `json:"price"`
+	Stock       int    `json:"stock"`
 	Location    string `json:"location"`
 	IsAvailable bool   `json:"is_available"`
 	CreatedAt   string `json:"created_at"`
