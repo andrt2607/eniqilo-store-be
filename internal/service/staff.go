@@ -34,7 +34,6 @@ func (u *StaffService) Register(ctx context.Context, body dto.ReqStaffRegister) 
 		ierr.LogErrorWithLocation(existPhoneError)
 		return http.StatusConflict, global_constant.EXISTING_PHONE_NUMBER, existPhoneError.Error(), existPhoneError
 	}
-	res := dto.ResStaffRegister{}
 	//register custom validation phone
 	errPhone := u.validator.RegisterValidation("phone", dto.PhoneValidation)
 	if errPhone != nil {
@@ -60,9 +59,6 @@ func (u *StaffService) Register(ctx context.Context, body dto.ReqStaffRegister) 
 		ierr.LogErrorWithLocation(err)
 		return http.StatusInternalServerError, global_constant.INTERNAL_SERVER_ERROR, err.Error(), err
 	}
-	res.PhoneNumber = body.PhoneNumber
-	res.Name = body.Name
-	res.AccessToken = token
 	result := dto.ResStaffRegister{}
 	result.StaffID = staffID
 	result.PhoneNumber = body.PhoneNumber

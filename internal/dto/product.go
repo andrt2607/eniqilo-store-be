@@ -17,4 +17,26 @@ type (
 		ID        string `json:"id" validate:"omitempty"`
 		CreatedAt string `json:"createdAt" validate:"omitempty,iso8601"`
 	}
+
+	ReqParamProductSKUGet struct {
+		Name      string `json:"phoneNumber"`
+		SKU       string `json:"sku"`
+		Price     string `json:"price"`
+		Category  string `json:"category"`
+		Stock     string `json:"inStock"`
+		CreatedAt string `json:"createdAt"`
+		Limit     int    `json:"limit"`
+		Offset    int    `json:"offset"`
+	}
+	ResProductSKUGet struct {
+		Id        string `json:"id,omitempty"`
+		Name      string `json:"name"`
+		SKU       string `json:"sku"`
+		Category  string `json:"category"`
+		ImageURL  string `json:"imageUrl"`
+		Stock     int    `json:"stock"`
+		Price     int    `json:"price"`
+		Location  string `json:"location"`
+		CreatedAt string `json:"createdAt"`
+	}
 )

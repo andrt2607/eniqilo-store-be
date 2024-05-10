@@ -32,9 +32,6 @@ func (h *Handler) registRoute() {
 
 	staffHandler := newStaffHandler(h.service.Staff)
 	productHandler := newProductHandler(h.service.Product)
-	// catH := newCatHandler(h.service.Cat)
-	// matchH := newMatchHandler(h.service.Match)
-	// productHandler := newProductfHandler(h.service.Product)
 	customerHandler := newCustomerHandler(h.service.Customer)
 	checkoutHandler := newCheckoutHandler(h.service.Checkout)
 
@@ -42,6 +39,8 @@ func (h *Handler) registRoute() {
 
 	r.Post("/v1/staff/register", staffHandler.Register)
 	r.Post("/v1/staff/login", staffHandler.Login)
+
+	r.Post("/v1/product/customer", productHandler.GetProductSKU)
 
 	// protected route
 	r.Group(func(r chi.Router) {
