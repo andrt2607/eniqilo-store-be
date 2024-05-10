@@ -11,6 +11,7 @@ import (
 	global_constant "eniqilo-store-be/pkg/constant"
 	response "eniqilo-store-be/pkg/resp"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth/v5"
 )
 
@@ -38,7 +39,6 @@ func (h *productHandler) Create(w http.ResponseWriter, r *http.Request) {
 	response.RespondWithJSON(w, http.StatusCreated, message, res)
 }
 
-
 func (h *productHandler) GetProduct(w http.ResponseWriter, r *http.Request) {
 	_, _, err := jwtauth.FromContext(r.Context())
 	if err != nil {
@@ -56,7 +56,6 @@ func (h *productHandler) GetProduct(w http.ResponseWriter, r *http.Request) {
 	param.Offset = offset
 	param.Name = queryParams.Get("name")
 	param.IsAvailable = queryParams.Get("isAvailable")
-	// category := ToCategory()
 	param.Category = dto.Category(queryParams.Get("category"))
 	param.Sku = queryParams.Get("sku")
 	param.Price = dto.Sort(queryParams.Get("price"))
@@ -70,20 +69,6 @@ func (h *productHandler) GetProduct(w http.ResponseWriter, r *http.Request) {
 	}
 	response.RespondWithJSON(w, statusCode, message, res)
 }
-
-func ToCategory(category string) string {
-	switch category {
-	case string(dto.Clothing):
-		return string(dto.Clothing)
-	case string(dto.Accessories):
-		return string(dto.Accessories)
-	case string(dto.Footwear):
-		return string(dto.Footwear)
-	case string(dto.Beverages):
-		return string(dto.Beverages)
-	default:
-		return ""
-	}
 
 func (h *productHandler) GetProductSKU(w http.ResponseWriter, r *http.Request) {
 
@@ -112,4 +97,21 @@ func (h *productHandler) GetProductSKU(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(successRes)
 	w.WriteHeader(http.StatusOK)
 
+}
+
+func (h *productHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
+	_, _, err := jwtauth.FromContext(r.Context())
+	if err != nil {
+		http.Error(w, "failed to get token from request", http.StatusBadRequest)
+		return
+	}
+
+	id := chi.URLParam(r, "id")
+
+	statusCode, message, res, err := h.productSvc.DeleteProduct(r.Context(), id)
+	if err != nil {
+		response.RespondWithError(w, statusCode, res)
+		return
+	}
+	response.RespondWithJSON(w, statusCode, message, res)
 }

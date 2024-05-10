@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -124,8 +125,8 @@ func (p *productRepo) Get(ctx context.Context, param dto.ReqParamProductGet) ([]
 			query.WriteString("price DESC ")
 		}
 	}
-  
-  fmt.Println("query: ", query.String())
+
+	fmt.Println("query: ", query.String())
 	rows, err := p.conn.Query(ctx, query.String())
 	if err != nil {
 		return nil, err
@@ -154,7 +155,7 @@ func (p *productRepo) Get(ctx context.Context, param dto.ReqParamProductGet) ([]
 		}
 		results = append(results, product)
 	}
-  return results, nil
+	return results, nil
 }
 
 func (cr *productRepo) GetProductSKU(ctx context.Context, param dto.ReqParamProductSKUGet) ([]dto.ResProductSKUGet, error) {
@@ -190,7 +191,6 @@ func (cr *productRepo) GetProductSKU(ctx context.Context, param dto.ReqParamProd
 	} else if param.Price == "desc" {
 		query.WriteString(", price DESC ")
 	}
-
 
 	// limit and offset
 	if param.Limit == 0 {
@@ -228,5 +228,22 @@ func (cr *productRepo) GetProductSKU(ctx context.Context, param dto.ReqParamProd
 		}
 		results = append(results, result)
 	}
-  return results, nil
+	return results, nil
+}
+
+func (p *productRepo) DeleteProduct(ctx context.Context, id string) error {
+	q := `UPDATE product SET deleted_at = now() WHERE id = $1 RETURNING id`
+
+	res, err := p.conn.Exec(ctx, q, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected := res.RowsAffected()
+
+	if rowsAffected == 0 {
+		return errors.New("product not found")
+	}
+
+	return nil
 }
