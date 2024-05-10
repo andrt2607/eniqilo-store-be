@@ -70,7 +70,7 @@ func (cr *productRepo) GetProductSKU(ctx context.Context, param dto.ReqParamProd
 	var query strings.Builder
 	categoryProduct := []string{"Clothing", "Accessories", "Footwear", "Beverages"}
 
-	query.WriteString("SELECT id, name, sku, category, imageUrl, stock, price, location, createdAt FROM product WHERE isAvailable = true ")
+	query.WriteString(`SELECT id, name, sku, category, imageUrl, stock, price, location, to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z') FROM product WHERE is_available = true `)
 
 	if param.SKU != "" {
 		query.WriteString(fmt.Sprintf("AND sku = '%s' ", param.SKU))
@@ -130,7 +130,6 @@ func (cr *productRepo) GetProductSKU(ctx context.Context, param dto.ReqParamProd
 			&result.ImageURL,
 			&result.Stock,
 			&result.Price,
-			&result.SKU,
 			&result.Location,
 			&result.CreatedAt)
 		if err != nil {

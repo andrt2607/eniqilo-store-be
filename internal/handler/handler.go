@@ -40,7 +40,7 @@ func (h *Handler) registRoute() {
 	r.Post("/v1/staff/register", staffHandler.Register)
 	r.Post("/v1/staff/login", staffHandler.Login)
 
-	r.Post("/v1/product/customer", productHandler.GetProductSKU)
+	r.Get("/v1/product/customer", productHandler.GetProductSKU)
 
 	// protected route
 	r.Group(func(r chi.Router) {

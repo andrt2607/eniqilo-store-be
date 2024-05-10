@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -11,8 +10,6 @@ import (
 	"eniqilo-store-be/internal/service"
 	global_constant "eniqilo-store-be/pkg/constant"
 	response "eniqilo-store-be/pkg/resp"
-
-	"github.com/go-chi/jwtauth/v5"
 )
 
 type productHandler struct {
@@ -40,14 +37,6 @@ func (h *productHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *productHandler) GetProductSKU(w http.ResponseWriter, r *http.Request) {
-
-	fmt.Println("masuk sini")
-
-	_, _, err := jwtauth.FromContext(r.Context())
-	if err != nil {
-		http.Error(w, "failed to get token from request", http.StatusBadRequest)
-		return
-	}
 
 	queryParams := r.URL.Query()
 	var param dto.ReqParamProductSKUGet
