@@ -10,6 +10,7 @@ type Repo struct {
 	Staff    *staffRepo
 	Product  *productRepo
 	Customer *customerRepo
+	Checkout *checkoutRepo
 }
 
 func NewRepo(conn *pgxpool.Pool) *Repo {
@@ -21,6 +22,7 @@ func NewRepo(conn *pgxpool.Pool) *Repo {
 	// repo.Cat = newCatRepo(conn)
 	// repo.Match = newMatchRepo(conn)
 	repo.Customer = newCustomerRepo(conn)
+	repo.Checkout = newCheckoutRepo(conn)
 
 	return &repo
 }

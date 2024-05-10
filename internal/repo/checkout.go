@@ -2,7 +2,9 @@ package repo
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -22,42 +24,102 @@ func newCheckoutRepo(conn *pgxpool.Pool) *checkoutRepo {
 	return &checkoutRepo{conn}
 }
 
-func (u *checkoutRepo) Insert(ctx context.Context, checkout entity.Checkout) (string, error) {
+func (cr *checkoutRepo) PostValidateCheckout(ctx context.Context, checkout dto.ReqCheckoutPost) (int, error) {
+	q := `SELECT id FROM customer where id = $1`
+	err := cr.conn.QueryRow(ctx, q,
+		checkout.CustomerId)
 
-	q := `INSERT INTO checkout (name, phone_number, created_at)
-	VALUES ($1, $2, now()) RETURNING id, phone_number, name `
+	if err != nil {
+		err_message := fmt.Sprintf("customerId %v is not found", checkout.CustomerId)
+		return http.StatusNotFound, errors.New(err_message)
+	}
 
-	var checkoutID, checkoutPhoneNumber, checkoutName string
-	err := u.conn.QueryRow(ctx, q,
-		checkout.Name, checkout.PhoneNumber).Scan(&checkoutID, &checkoutPhoneNumber, &checkoutName)
+	var TotalCharge int
+	for _, element := range checkout.ProductDetails {
+		// element is the element from someSlice for where we are
+		// var Charge int
+		data := dto.ResPostValidateCheckout{}
+		// var stock int
+		q := `SELECT price*$2 as charge, stock-$2 as stock FROM product where id = $1 and is_available = true`
+
+		err := cr.conn.QueryRow(ctx, q,
+			element.ProductId, element.Quantity).Scan(&data)
+
+		if err != nil {
+			return http.StatusNotFound, err
+		}
+
+		if data.Stock <= 0 {
+			err_message := fmt.Sprintf("one of productIds (%v) stock is not enough (stock %v need %v)", element.ProductId, data.Stock, element.Quantity)
+			return http.StatusBadRequest, errors.New(err_message)
+		}
+
+		TotalCharge = TotalCharge + data.Charge
+		if TotalCharge > checkout.Paid {
+			err_message := fmt.Sprintf("paid %v is not enough based on all bought product %v", checkout.Paid, TotalCharge)
+			return http.StatusBadRequest, errors.New(err_message)
+		}
+	}
+
+	if (checkout.Paid - TotalCharge) != checkout.Change {
+		err_message := fmt.Sprintf("change %v is not right, based on all bought product %v, and what is paid %v", checkout.Change, TotalCharge, checkout.Paid)
+		return http.StatusBadRequest, errors.New(err_message)
+	}
+
+	return http.StatusContinue, nil
+}
+
+func (cr *checkoutRepo) PostCheckout(ctx context.Context, checkout dto.ReqCheckoutPost) (int, error) {
+
+	qi := `INSERT INTO order_product (customer_id, paid, change, created_at)
+	VALUES ($1, $2, $3, now()) RETURNING id`
+
+	var OrderID string
+	err := cr.conn.QueryRow(ctx, qi,
+		checkout.CustomerId, checkout.Paid, checkout.Change).Scan(&OrderID)
 
 	if err != nil {
 		ierr.LogErrorWithLocation(err)
 		if pgErr, ok := err.(*pgconn.PgError); ok {
 			if pgErr.Code == "23505" {
-				return "", ierr.ErrDuplicate
+				return http.StatusBadRequest, ierr.ErrDuplicate
 			}
 		}
-		return "", err
+		return http.StatusBadRequest, err
 	}
 
-	return checkoutID, nil
+	for _, element := range checkout.ProductDetails {
+		qu := `UPDATE product SET stock = stock - $2, updated_at = now() WHERE id = $1`
+		_, err := cr.conn.Exec(ctx, qu,
+			element.ProductId, element.Quantity)
+
+		if err != nil {
+			return http.StatusInternalServerError, err
+		}
+	}
+
+	return http.StatusOK, nil
 }
 
-func (cr *checkoutRepo) GetCheckout(ctx context.Context, param dto.ReqParamCheckoutGet, sub string) ([]dto.ResCheckoutGet, error) {
+func (cr *checkoutRepo) GetCheckout(ctx context.Context, param dto.ReqParamCheckoutGet) ([]dto.ResCheckoutGet, error) {
 	var query strings.Builder
 
-	query.WriteString("SELECT id, phone_number, name FROM checkout WHERE 1=1 ")
+	query.WriteString("SELECT id, customer_id, paid, change FROM order_product WHERE 1=1 ")
 
-	if param.PhoneNumber != "" {
-		query.WriteString(fmt.Sprintf("AND phone_number = '+%s' ", param.PhoneNumber))
+	if param.CustomerId != "" {
+		query.WriteString(fmt.Sprintf("AND customer_id = '+%s' ", param.CustomerId))
 	}
 
-	if param.Name != "" {
-		query.WriteString(fmt.Sprintf("AND LOWER(name) LIKE LOWER('%s') ", fmt.Sprintf("%%%s%%", param.Name)))
+	if param.CreatedAt == "desc" || param.CreatedAt == "asc" {
+		query.WriteString(fmt.Sprintf("ORDER BY created_at %s) ", param.CreatedAt))
 	}
 
-	query.WriteString("ORDER BY created_at DESC")
+	// limit and offset
+	if param.Limit == 0 {
+		param.Limit = 5
+	}
+
+	query.WriteString(fmt.Sprintf("LIMIT %d OFFSET %d", param.Limit, param.Offset))
 
 	// show query
 	fmt.Println(query.String())
@@ -68,50 +130,58 @@ func (cr *checkoutRepo) GetCheckout(ctx context.Context, param dto.ReqParamCheck
 	}
 	defer rows.Close()
 
-	results := make([]dto.ResCheckoutGet, 0, 10)
+	results := []dto.ResCheckoutGet{}
 	for rows.Next() {
 
 		result := dto.ResCheckoutGet{}
 		err := rows.Scan(
-			&result.CheckoutID,
-			&result.PhoneNumber,
-			&result.Name)
+			&result.OrderId,
+			&result.CustomerId,
+			&result.Paid,
+			&result.Change)
 		if err != nil {
 			return nil, err
 		}
+
+		orderDetail, err := cr.GetOrderDetail(ctx, result.OrderId)
+		if err != nil {
+			return nil, err
+		}
+		result.ProductDetails = orderDetail
+
 		results = append(results, result)
 	}
 
 	return results, nil
 }
 
-// func (cr *checkoutRepo) GetCatByID(ctx context.Context, id, sub string) (dto.ResCheckoutGet, error) {
-// 	q := `SELECT id,
-// 		name,
-// 		race,
-// 		sex,
-// 		age_in_month,
-// 		description,
-// 		image_urls,
-// 		EXISTS (
-// 			SELECT 1 FROM match_checkouts m WHERE m.user_checkout_id = c.id AND m.user_id = $1
-// 		) AS has_matched,
-// 		created_at
-// 	FROM cats c WHERE id = $2`
+func (cr *checkoutRepo) GetOrderDetail(ctx context.Context, orderId string) ([]entity.CheckoutDetail, error) {
+	var query strings.Builder
 
-// 	var imageUrl sql.NullString
-// 	var createdAt int64
-// 	var description string
+	query.WriteString("SELECT id, order_id, product_id, product_order_quantity FROM order_detail WHERE order_id = $1")
 
-// 	result := dto.ResCheckoutGet{}
-// 	err := cr.conn.QueryRow(ctx, q, sub, id).Scan(&result.ID, &result.Name, &result.Race, &result.Sex, &result.AgeInMonth, &description, &imageUrl, &result.HasMatched, &createdAt)
-// 	if err != nil {
-// 		return dto.ResCheckoutGet{}, err
-// 	}
+	// show query
+	fmt.Println(query.String())
 
-// 	result.ImageUrls = strings.Split(imageUrl.String, ",")
-// 	result.CreatedAt = timepkg.TimeToISO8601(time.Unix(createdAt, 0))
-// 	result.Description = description
+	rows, err := cr.conn.Query(ctx, query.String(), orderId) // Replace $1 with sub
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-// 	return result, nil
-// }
+	results := []entity.CheckoutDetail{}
+	for rows.Next() {
+
+		result := entity.CheckoutDetail{}
+		err := rows.Scan(
+			&result.ProductId,
+			&result.Quantity)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, result)
+	}
+
+	return results, nil
+}

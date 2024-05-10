@@ -44,7 +44,7 @@ func (u *customerRepo) Insert(ctx context.Context, customer entity.Customer) (st
 	return customerID, nil
 }
 
-func (cr *customerRepo) GetCustomer(ctx context.Context, param dto.ReqParamCustomerGet, sub string) ([]dto.ResCustomerGet, error) {
+func (cr *customerRepo) GetCustomer(ctx context.Context, param dto.ReqParamCustomerGet) ([]dto.ResCustomerGet, error) {
 	var query strings.Builder
 
 	query.WriteString("SELECT id, phone_number, name FROM customer WHERE 1=1 ")
@@ -68,7 +68,7 @@ func (cr *customerRepo) GetCustomer(ctx context.Context, param dto.ReqParamCusto
 	}
 	defer rows.Close()
 
-	results := make([]dto.ResCustomerGet, 0, 10)
+	results := []dto.ResCustomerGet{}
 	for rows.Next() {
 
 		result := dto.ResCustomerGet{}
