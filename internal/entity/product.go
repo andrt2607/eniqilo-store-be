@@ -10,7 +10,6 @@ type Product struct {
 	Price       int    `json:"price"`
 	Location    string `json:"location"`
 	IsAvailable bool   `json:"is_available"`
-	UserID      string `json:"user_id"`
 	CreatedAt   string `json:"created_at"`
 	UpdatedAt   string `json:"updated_at"`
 }

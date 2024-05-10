@@ -12,22 +12,22 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type userRepo struct {
+type staffRepo struct {
 	conn *pgxpool.Pool
 }
 
-func newUserRepo(conn *pgxpool.Pool) *userRepo {
-	return &userRepo{conn}
+func newStaffRepo(conn *pgxpool.Pool) *staffRepo {
+	return &staffRepo{conn}
 }
 
-func (u *userRepo) Insert(ctx context.Context, user entity.User) (string, error) {
-	credVal := user.PhoneNumber
+func (u *staffRepo) Insert(ctx context.Context, staff entity.Staff) (string, error) {
+	credVal := staff.PhoneNumber
 	q := `INSERT INTO staff (name, phone_number, password_hash, created_at, updated_at)
 	VALUES ($1, $2, $3, now(), now()) RETURNING id`
 
-	var userID string
+	var staffID string
 	err := u.conn.QueryRow(ctx, q,
-		user.Name, credVal, user.Password).Scan(&userID)
+		staff.Name, credVal, staff.Password).Scan(&staffID)
 
 	if err != nil {
 		ierr.LogErrorWithLocation(err)
@@ -39,74 +39,52 @@ func (u *userRepo) Insert(ctx context.Context, user entity.User) (string, error)
 		return "", err
 	}
 
-	return userID, nil
+	return staffID, nil
 }
 
-// func (u *userRepo) GetByEmail(ctx context.Context, cred string) (entity.User, error) {
-// 	user := entity.User{}
-// 	q := `SELECT id, name, email, password FROM users
-// 	WHERE email = $1`
-
-// 	var email sql.NullString
-
-// 	err := u.conn.QueryRow(ctx,
-// 		q, cred).Scan(&user.ID, &user.Name, &email, &user.Password)
-
-// 	user.Email = email.String
-
-// 	if err != nil {
-// 		if err.Error() == "no rows in result set" {
-// 			return user, ierr.ErrNotFound
-// 		}
-// 		return user, err
-// 	}
-
-// 	return user, nil
-// }
-
-func (u *userRepo) GetByPhoneNumber(ctx context.Context, cred string) (entity.User, error) {
-	user := entity.User{}
+func (u *staffRepo) GetByPhoneNumber(ctx context.Context, cred string) (entity.Staff, error) {
+	staff := entity.Staff{}
 	q := `SELECT id, name, phone_number, password_hash FROM staff
 	WHERE phone_number = $1`
 
 	var phoneNumber sql.NullString
 
 	err := u.conn.QueryRow(ctx,
-		q, cred).Scan(&user.ID, &user.Name, &phoneNumber, &user.Password)
+		q, cred).Scan(&staff.ID, &staff.Name, &phoneNumber, &staff.Password)
 
-	user.PhoneNumber = phoneNumber.String
+	staff.PhoneNumber = phoneNumber.String
 
 	if err != nil {
-		return user, err
+		return staff, err
 	}
 
-	return user, nil
+	return staff, nil
 }
 
-func (u *userRepo) GetByID(ctx context.Context, id string) (entity.User, error) {
-	user := entity.User{}
-	q := `SELECT phone_number, name, password FROM users
+func (u *staffRepo) GetByID(ctx context.Context, id string) (entity.Staff, error) {
+	staff := entity.Staff{}
+	q := `SELECT phone_number, name, password FROM staffs
 	WHERE id = $1`
 
 	var phoneNumber sql.NullString
 
 	err := u.conn.QueryRow(ctx,
-		q, id).Scan(&phoneNumber, &user.Name, &user.Password)
+		q, id).Scan(&phoneNumber, &staff.Name, &staff.Password)
 
-	user.PhoneNumber = phoneNumber.String
+	staff.PhoneNumber = phoneNumber.String
 
 	if err != nil {
 		if err.Error() == "no rows in result set" {
-			return user, ierr.ErrNotFound
+			return staff, ierr.ErrNotFound
 		}
-		return user, err
+		return staff, err
 	}
 
-	return user, nil
+	return staff, nil
 }
 
-func (u *userRepo) LookUp(ctx context.Context, id string) error {
-	q := `SELECT 1 FROM users WHERE id = $1`
+func (u *staffRepo) LookUp(ctx context.Context, id string) error {
+	q := `SELECT 1 FROM staffs WHERE id = $1`
 
 	v := 0
 	err := u.conn.QueryRow(ctx,
@@ -122,8 +100,8 @@ func (u *userRepo) LookUp(ctx context.Context, id string) error {
 	return nil
 }
 
-func (u *userRepo) UpdateAccount(ctx context.Context, id, name, url string) error {
-	q := `UPDATE users SET image_url = $1, name = $2 WHERE id = $3`
+func (u *staffRepo) UpdateAccount(ctx context.Context, id, name, url string) error {
+	q := `UPDATE staffs SET image_url = $1, name = $2 WHERE id = $3`
 	_, err := u.conn.Exec(ctx, q,
 		url, name, id)
 
@@ -139,8 +117,8 @@ func (u *userRepo) UpdateAccount(ctx context.Context, id, name, url string) erro
 	return nil
 }
 
-func (u *userRepo) GetNameBySub(ctx context.Context, id string) (string, error) {
-	q := `SELECT name FROM users WHERE id = $1`
+func (u *staffRepo) GetNameBySub(ctx context.Context, id string) (string, error) {
+	q := `SELECT name FROM staffs WHERE id = $1`
 
 	v := ""
 	err := u.conn.QueryRow(ctx,
@@ -156,8 +134,8 @@ func (u *userRepo) GetNameBySub(ctx context.Context, id string) (string, error) 
 	return v, nil
 }
 
-func (u *userRepo) GetEmailBySub(ctx context.Context, id string) (string, error) {
-	q := `SELECT email FROM users WHERE id = $1`
+func (u *staffRepo) GetEmailBySub(ctx context.Context, id string) (string, error) {
+	q := `SELECT email FROM staffs WHERE id = $1`
 
 	v := ""
 	err := u.conn.QueryRow(ctx,
@@ -173,10 +151,10 @@ func (u *userRepo) GetEmailBySub(ctx context.Context, id string) (string, error)
 	return v, nil
 }
 
-// func (u *userRepo) GetNameByID(ctx context.Context, id string) (string, error) {
+// func (u *staffRepo) GetNameByID(ctx context.Context, id string) (string, error) {
 // 	name := ""
 // 	err := u.conn.QueryRow(ctx,
-// 		`SELECT name FROM users
+// 		`SELECT name FROM staffs
 // 		WHERE id = $1`,
 // 		id).Scan(&name)
 // 	if err != nil {

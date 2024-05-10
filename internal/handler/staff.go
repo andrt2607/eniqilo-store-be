@@ -10,23 +10,23 @@ import (
 	response "eniqilo-store-be/pkg/resp"
 )
 
-type userHandler struct {
-	userSvc *service.UserService
+type staffHandler struct {
+	staffSvc *service.StaffService
 }
 
-func newUserHandler(userSvc *service.UserService) *userHandler {
-	return &userHandler{userSvc}
+func newStaffHandler(staffSvc *service.StaffService) *staffHandler {
+	return &staffHandler{staffSvc}
 }
 
-func (h *userHandler) Register(w http.ResponseWriter, r *http.Request) {
-	var req dto.ReqRegister
+func (h *staffHandler) Register(w http.ResponseWriter, r *http.Request) {
+	var req dto.ReqStaffRegister
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		response.RespondWithError(w, http.StatusBadRequest, global_constant.FAILED_PARSE_REQ_BODY)
 		return
 	}
-	statusCode, message, res, err := h.userSvc.Register(r.Context(), req)
+	statusCode, message, res, err := h.staffSvc.Register(r.Context(), req)
 	if err != nil {
 		response.RespondWithError(w, statusCode, res)
 		return
@@ -34,8 +34,8 @@ func (h *userHandler) Register(w http.ResponseWriter, r *http.Request) {
 	response.RespondWithJSON(w, http.StatusCreated, message, res)
 }
 
-func (h *userHandler) Login(w http.ResponseWriter, r *http.Request) {
-	var req dto.ReqLogin
+func (h *staffHandler) Login(w http.ResponseWriter, r *http.Request) {
+	var req dto.ReqStaffLogin
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -43,7 +43,7 @@ func (h *userHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	statusCode, message, res, err := h.userSvc.Login(r.Context(), req)
+	statusCode, message, res, err := h.staffSvc.Login(r.Context(), req)
 	if err != nil {
 		response.RespondWithError(w, statusCode, res)
 		return

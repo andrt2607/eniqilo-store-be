@@ -16,25 +16,25 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type UserService struct {
+type StaffService struct {
 	repo      *repo.Repo
 	validator *validator.Validate
 	cfg       *cfg.Cfg
 }
 
-func newUserService(repo *repo.Repo, validator *validator.Validate, cfg *cfg.Cfg) *UserService {
-	return &UserService{repo, validator, cfg}
+func newStaffService(repo *repo.Repo, validator *validator.Validate, cfg *cfg.Cfg) *StaffService {
+	return &StaffService{repo, validator, cfg}
 }
 
-func (u *UserService) Register(ctx context.Context, body dto.ReqRegister) (int, string, interface{}, error) {
+func (u *StaffService) Register(ctx context.Context, body dto.ReqStaffRegister) (int, string, interface{}, error) {
 	//check if phone number already exist
-	checkedUser, _ := u.repo.User.GetByPhoneNumber(ctx, body.PhoneNumber)
-	if checkedUser.PhoneNumber == body.PhoneNumber {
+	checkedStaff, _ := u.repo.Staff.GetByPhoneNumber(ctx, body.PhoneNumber)
+	if checkedStaff.PhoneNumber == body.PhoneNumber {
 		existPhoneError := errors.New("phone number already exist")
 		ierr.LogErrorWithLocation(existPhoneError)
 		return http.StatusConflict, global_constant.EXISTING_PHONE_NUMBER, existPhoneError.Error(), existPhoneError
 	}
-	res := dto.ResRegister{}
+	res := dto.ResStaffRegister{}
 	//register custom validation phone
 	errPhone := u.validator.RegisterValidation("phone", dto.PhoneValidation)
 	if errPhone != nil {
@@ -48,14 +48,14 @@ func (u *UserService) Register(ctx context.Context, body dto.ReqRegister) (int, 
 		return http.StatusBadRequest, global_constant.FAIL_VALIDATE_REQ_BODY, err.Error(), err
 	}
 
-	user := body.ToEntity(u.cfg.BCryptSalt)
-	userID, err := u.repo.User.Insert(ctx, user)
+	staff := body.ToEntity(u.cfg.BCryptSalt)
+	staffID, err := u.repo.Staff.Insert(ctx, staff)
 	if err != nil {
 		ierr.LogErrorWithLocation(err)
 		return http.StatusInternalServerError, global_constant.FAIL_VALIDATE_REQ_BODY, err.Error(), err
 	}
 	//generate token
-	token, _, err := auth.GenerateToken(u.cfg.JWTSecret, 8, auth.JwtPayload{Sub: userID})
+	token, _, err := auth.GenerateToken(u.cfg.JWTSecret, 8, auth.JwtPayload{Sub: staffID})
 	if err != nil {
 		ierr.LogErrorWithLocation(err)
 		return http.StatusInternalServerError, global_constant.INTERNAL_SERVER_ERROR, err.Error(), err
@@ -63,15 +63,15 @@ func (u *UserService) Register(ctx context.Context, body dto.ReqRegister) (int, 
 	res.PhoneNumber = body.PhoneNumber
 	res.Name = body.Name
 	res.AccessToken = token
-	result := dto.ResRegister{}
-	result.UserID = userID
+	result := dto.ResStaffRegister{}
+	result.StaffID = staffID
 	result.PhoneNumber = body.PhoneNumber
 	result.Name = body.Name
 	result.AccessToken = token
 	return http.StatusOK, global_constant.SUCCESS_REGISTER_USER, result, nil
 }
 
-func (u *UserService) Login(ctx context.Context, body dto.ReqLogin) (int, string, interface{}, error) {
+func (u *StaffService) Login(ctx context.Context, body dto.ReqStaffLogin) (int, string, interface{}, error) {
 	//validate request body
 	err := u.validator.Struct(body)
 	if err != nil {
@@ -80,7 +80,7 @@ func (u *UserService) Login(ctx context.Context, body dto.ReqLogin) (int, string
 	}
 
 	//check if phone number not found
-	user, err := u.repo.User.GetByPhoneNumber(ctx, body.PhoneNumber)
+	staff, err := u.repo.Staff.GetByPhoneNumber(ctx, body.PhoneNumber)
 	if err != nil {
 		if err.Error() == "no rows in result set" {
 			ierr.LogErrorWithLocation(err)
@@ -89,7 +89,7 @@ func (u *UserService) Login(ctx context.Context, body dto.ReqLogin) (int, string
 	}
 
 	//compare password
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(staff.Password), []byte(body.Password)); err != nil {
 		if err == bcrypt.ErrMismatchedHashAndPassword {
 			ierr.LogErrorWithLocation(err)
 			return http.StatusBadRequest, global_constant.WRONG_PASSWORD, err.Error(), err
@@ -97,13 +97,13 @@ func (u *UserService) Login(ctx context.Context, body dto.ReqLogin) (int, string
 		return http.StatusBadRequest, global_constant.WRONG_PASSWORD, err.Error(), err
 	}
 	//generate token
-	token, _, err := auth.GenerateToken(u.cfg.JWTSecret, 8, auth.JwtPayload{Sub: user.ID})
+	token, _, err := auth.GenerateToken(u.cfg.JWTSecret, 8, auth.JwtPayload{Sub: staff.ID})
 	if err != nil {
 		return http.StatusInternalServerError, global_constant.FAIL_GENERATE_TOKEN, err.Error(), err
 	}
-	res := dto.ResLogin{}
-	res.PhoneNumber = user.PhoneNumber
-	res.Name = user.Name
+	res := dto.ResStaffLogin{}
+	res.PhoneNumber = staff.PhoneNumber
+	res.Name = staff.Name
 	res.AccessToken = token
 
 	return http.StatusOK, global_constant.SUCCESS_LOGIN_USER, res, nil
