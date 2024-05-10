@@ -14,3 +14,13 @@ type Product struct {
 	CreatedAt   string `json:"created_at"`
 	UpdatedAt   string `json:"updated_at"`
 }
+
+type Category string
+type CategoryProduct []Category
+
+const (
+	Clothing    Category = "Clothing"
+	Accessories Category = "Accessories"
+	Footwear    Category = "Footwear"
+	Beverages   Category = "Beverages"
+)

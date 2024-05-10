@@ -11,6 +11,8 @@ import (
 	"eniqilo-store-be/internal/dto"
 	"eniqilo-store-be/internal/ierr"
 
+	validator "eniqilo-store-be/pkg/validator"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -122,13 +124,8 @@ func (p *productRepo) Get(ctx context.Context, param dto.ReqParamProductGet) ([]
 			query.WriteString("price DESC ")
 		}
 	}
-	// limit and offset
-	if param.Limit == 0 {
-		param.Limit = 5
-	}
-
-	query.WriteString(fmt.Sprintf("LIMIT %d OFFSET %d", param.Limit, param.Offset))
-	fmt.Println("query: ", query.String())
+  
+  fmt.Println("query: ", query.String())
 	rows, err := p.conn.Query(ctx, query.String())
 	if err != nil {
 		return nil, err
@@ -157,5 +154,79 @@ func (p *productRepo) Get(ctx context.Context, param dto.ReqParamProductGet) ([]
 		}
 		results = append(results, product)
 	}
-	return results, nil
+  return results, nil
+}
+
+func (cr *productRepo) GetProductSKU(ctx context.Context, param dto.ReqParamProductSKUGet) ([]dto.ResProductSKUGet, error) {
+	var query strings.Builder
+	categoryProduct := []string{"Clothing", "Accessories", "Footwear", "Beverages"}
+
+	query.WriteString(`SELECT id, name, sku, category, imageUrl, stock, price, location, to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z') FROM product WHERE is_available = true `)
+
+	if param.SKU != "" {
+		query.WriteString(fmt.Sprintf("AND sku = '%s' ", param.SKU))
+	}
+
+	if param.Stock == "true" {
+		query.WriteString("AND stock > 0 ")
+	}
+
+	if param.Name != "" {
+		query.WriteString(fmt.Sprintf("AND LOWER(name) LIKE LOWER('%s') ", fmt.Sprintf("%%%s%%", param.Name)))
+	}
+
+	if validator.IsInArray(param.Category, categoryProduct) {
+		query.WriteString(fmt.Sprintf("AND category = '%s') ", param.Category))
+	}
+
+	if param.CreatedAt == "asc" {
+		query.WriteString("ORDER BY created_at ASC ")
+	} else {
+		query.WriteString("ORDER BY created_at DESC ")
+	}
+
+	if param.Price == "asc" {
+		query.WriteString(", price ASC ")
+	} else if param.Price == "desc" {
+		query.WriteString(", price DESC ")
+	}
+
+
+	// limit and offset
+	if param.Limit == 0 {
+		param.Limit = 5
+	}
+
+	query.WriteString(fmt.Sprintf("LIMIT %d OFFSET %d", param.Limit, param.Offset))
+	rows, err := cr.conn.Query(ctx, query.String()) // Replace $1 with sub
+	if err != nil {
+		if pgErr, ok := err.(*pgconn.PgError); ok {
+			if pgErr.Code == "02000" {
+				return []dto.ResProductSKUGet{}, nil
+			}
+		}
+		return nil, err
+	}
+	defer rows.Close()
+
+	results := []dto.ResProductSKUGet{}
+	for rows.Next() {
+
+		result := dto.ResProductSKUGet{}
+		err := rows.Scan(
+			&result.Id,
+			&result.Name,
+			&result.SKU,
+			&result.Category,
+			&result.ImageURL,
+			&result.Stock,
+			&result.Price,
+			&result.Location,
+			&result.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, result)
+	}
+  return results, nil
 }

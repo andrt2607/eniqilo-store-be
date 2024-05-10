@@ -59,5 +59,27 @@ type (
 		Price       Sort     `json:"price"`
 		InStock     string   `json:"inStock"`
 		CreatedAt   Sort     `json:"createdAt"`
+  }
+	ReqParamProductSKUGet struct {
+		Name      string `json:"phoneNumber"`
+		SKU       string `json:"sku"`
+		Price     string `json:"price"`
+		Category  string `json:"category"`
+		Stock     string `json:"inStock"`
+		CreatedAt string `json:"createdAt"`
+		Limit     int    `json:"limit"`
+		Offset    int    `json:"offset"`
+	}
+	ResProductSKUGet struct {
+		Id        string `json:"id,omitempty"`
+		Name      string `json:"name"`
+		SKU       string `json:"sku"`
+		Category  string `json:"category"`
+		ImageURL  string `json:"imageUrl"`
+		Stock     int    `json:"stock"`
+		Price     int    `json:"price"`
+		Location  string `json:"location"`
+		CreatedAt string `json:"createdAt"`
+
 	}
 )
