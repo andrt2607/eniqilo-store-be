@@ -59,11 +59,13 @@ func (cr *customerRepo) GetCustomer(ctx context.Context, param dto.ReqParamCusto
 
 	query.WriteString("ORDER BY created_at DESC")
 
-	// show query
-	fmt.Println(query.String())
-
 	rows, err := cr.conn.Query(ctx, query.String()) // Replace $1 with sub
 	if err != nil {
+		if pgErr, ok := err.(*pgconn.PgError); ok {
+			if pgErr.Code == "02000" {
+				return []dto.ResCustomerGet{}, nil
+			}
+		}
 		return nil, err
 	}
 	defer rows.Close()
