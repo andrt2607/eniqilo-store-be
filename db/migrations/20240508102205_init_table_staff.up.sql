@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS staff (
     id SERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
-    phone_number VARCHAR(50) NOT NULL,
+    phone_number VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT null,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP

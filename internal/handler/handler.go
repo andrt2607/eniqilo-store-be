@@ -30,17 +30,18 @@ func (h *Handler) registRoute() {
 	r := h.router
 	var tokenAuth *jwtauth.JWTAuth = jwtauth.New("HS256", []byte(h.cfg.JWTSecret), nil, jwt.WithAcceptableSkew(30*time.Second))
 
-	userH := newUserHandler(h.service.User)
-	productH := newProductHandler(h.service.Product)
+	staffHandler := newStaffHandler(h.service.Staff)
+	productHandler := newProductHandler(h.service.Product)
 	// catH := newCatHandler(h.service.Cat)
 	// matchH := newMatchHandler(h.service.Match)
+	// productHandler := newProductfHandler(h.service.Product)
+	customerHandler := newCustomerHandler(h.service.Customer)
+	checkoutHandler := newCheckoutHandler(h.service.Checkout)
 
 	r.Use(middleware.RedirectSlashes)
 
-	r.Post("/v1/staff/register", userH.Register)
-	r.Post("/v1/staff/login", userH.Login)
-
-	r.Post("/v1/product", productH.Create)
+	r.Post("/v1/staff/register", staffHandler.Register)
+	r.Post("/v1/staff/login", staffHandler.Login)
 
 	// protected route
 	r.Group(func(r chi.Router) {
@@ -54,6 +55,13 @@ func (h *Handler) registRoute() {
 		// r.Get("/v1/cat/{id}", catH.GetCatByID)
 		// r.Put("/v1/cat/{id}", catH.UpdateCat)
 		// r.Delete("/v1/cat/{id}", catH.DeleteCat)
+
+		r.Post("/v1/product", productHandler.Create)
+
+		r.Post("/v1/customer/register", customerHandler.Register)
+		r.Get("/v1/customer", customerHandler.GetCustomer)
+		r.Post("/v1/product/checkout", checkoutHandler.PostCheckout)
+		r.Post("/v1/product/checkout", checkoutHandler.GetCheckout)
 
 		// r.Post("/v1/cat/match", matchH.MatchCat)
 		// r.Get("/v1/cat/match", matchH.GetMatch)

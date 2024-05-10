@@ -7,20 +7,20 @@ import (
 type Repo struct {
 	conn *pgxpool.Pool
 
-	User    *userRepo
-	Product *productRepo
-	// Cat   *catRepo
-	// Match *matchRepo
+	Staff    *staffRepo
+	Product  *productRepo
+	Customer *customerRepo
 }
 
 func NewRepo(conn *pgxpool.Pool) *Repo {
 	repo := Repo{}
 	repo.conn = conn
 
-	repo.User = newUserRepo(conn)
+	repo.Staff = newStaffRepo(conn)
 	repo.Product = newProductRepo(conn)
 	// repo.Cat = newCatRepo(conn)
 	// repo.Match = newMatchRepo(conn)
+	repo.Customer = newCustomerRepo(conn)
 
 	return &repo
 }

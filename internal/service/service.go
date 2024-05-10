@@ -12,10 +12,12 @@ type Service struct {
 	validator *validator.Validate
 	cfg       *cfg.Cfg
 
-	User    *UserService
+	Staff   *StaffService
 	Product *ProductService
 	// Cat   *CatService
 	// Match *MatchService
+	Customer *CustomerService
+	Checkout *CheckoutService
 }
 
 func NewService(repo *repo.Repo, validator *validator.Validate, cfg *cfg.Cfg) *Service {
@@ -24,9 +26,10 @@ func NewService(repo *repo.Repo, validator *validator.Validate, cfg *cfg.Cfg) *S
 	service.validator = validator
 	service.cfg = cfg
 
-	service.User = newUserService(repo, validator, cfg)
+	service.Staff = newStaffService(repo, validator, cfg)
 	service.Product = newProductService(repo, validator, cfg)
-	// service.Cat = newCatService(repo, validator, cfg)
+	service.Customer = newCustomerService(repo, validator, cfg)
+	service.Checkout = newCheckoutService(repo, validator, cfg)
 	// service.Match = newMatchService(repo, validator, cfg)
 
 	return &service
