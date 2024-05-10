@@ -2,6 +2,8 @@ package repo
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -60,4 +62,100 @@ func (p *productRepo) Insert(ctx context.Context, product dto.ReqCreateProduct) 
 		ID:        insertedRow.ID,
 		CreatedAt: insertedRow.CreatedAt.Format(time.RFC3339),
 	}, nil
+}
+
+func (p *productRepo) Get(ctx context.Context, param dto.ReqParamProductGet) ([]dto.ResGetProduct, error) {
+	var query strings.Builder
+
+	query.WriteString("SELECT id, name, sku, category, imageurl, notes, price, stock, location, is_available, created_at FROM product WHERE 1=1 ")
+
+	if param.ID != "" {
+		query.WriteString(fmt.Sprintf("AND id = '+%s' ", param.ID))
+	}
+	if param.Sku != "" {
+		query.WriteString(fmt.Sprintf("AND sku = '%s' ", param.Sku))
+	}
+	if param.Name != "" {
+		query.WriteString(fmt.Sprintf("AND name LIKE '%%%s%%' ", strings.ToLower(param.Name)))
+	}
+	if param.IsAvailable == "true" {
+		query.WriteString(fmt.Sprintf("AND is_available = '%s' ", param.IsAvailable))
+	} else if param.IsAvailable == "false" {
+		query.WriteString(fmt.Sprintf("AND is_available = '%s' ", param.IsAvailable))
+	}
+	if param.Category != "" {
+		switch dto.Category(param.Category) {
+		case dto.Clothing:
+			query.WriteString(fmt.Sprintf("AND category = '%s' ", param.Category))
+		case dto.Accessories:
+			query.WriteString(fmt.Sprintf("AND category = '%s' ", param.Category))
+		case dto.Footwear:
+			query.WriteString(fmt.Sprintf("AND category = '%s' ", param.Category))
+		case dto.Beverages:
+			query.WriteString(fmt.Sprintf("AND category = '%s' ", param.Category))
+		default:
+		}
+	}
+	if param.InStock == "true" {
+		query.WriteString(fmt.Sprintf("AND stock > 0 "))
+	} else if param.InStock == "false" {
+		query.WriteString(fmt.Sprintf("AND stock = 0 "))
+	}
+	var orderByCreatedAt bool
+	if param.CreatedAt != "" {
+		orderByCreatedAt = true
+		if param.CreatedAt == "asc" {
+			query.WriteString("ORDER BY created_at ASC ")
+		} else {
+			query.WriteString("ORDER BY created_at DESC ")
+		}
+	}
+	if param.Price != "" {
+		if orderByCreatedAt {
+			query.WriteString(", ")
+		} else {
+			query.WriteString("ORDER BY ")
+		}
+		if param.Price == "asc" {
+			query.WriteString("price ASC ")
+		} else {
+			query.WriteString("price DESC ")
+		}
+	}
+	// limit and offset
+	if param.Limit == 0 {
+		param.Limit = 5
+	}
+
+	query.WriteString(fmt.Sprintf("LIMIT %d OFFSET %d", param.Limit, param.Offset))
+	fmt.Println("query: ", query.String())
+	rows, err := p.conn.Query(ctx, query.String())
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	results := []dto.ResGetProduct{}
+	for rows.Next() {
+		var product dto.ResGetProduct
+		var createdAt time.Time
+		err := rows.Scan(
+			&product.ID,
+			&product.Name,
+			&product.SKU,
+			&product.Category,
+			&product.ImageURL,
+			&product.Notes,
+			&product.Price,
+			&product.Stock,
+			&product.Location,
+			&product.IsAvailable,
+			&createdAt,
+		)
+		product.CreatedAt = createdAt.Format(time.RFC3339)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, product)
+	}
+	return results, nil
 }
