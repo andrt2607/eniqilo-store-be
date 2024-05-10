@@ -3,8 +3,10 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"eniqilo-store-be/internal/dto"
+	"eniqilo-store-be/internal/ierr"
 	"eniqilo-store-be/internal/service"
 	global_constant "eniqilo-store-be/pkg/constant"
 	response "eniqilo-store-be/pkg/resp"
@@ -32,4 +34,32 @@ func (h *productHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.RespondWithJSON(w, http.StatusCreated, message, res)
+}
+
+func (h *productHandler) GetProductSKU(w http.ResponseWriter, r *http.Request) {
+
+	queryParams := r.URL.Query()
+	var param dto.ReqParamProductSKUGet
+
+	param.Name = queryParams.Get("name")
+	param.SKU = queryParams.Get("sku")
+	param.Stock = queryParams.Get("inStock")
+	param.Price = queryParams.Get("price")
+	param.CreatedAt = queryParams.Get("createdAt")
+	param.Limit, _ = strconv.Atoi(queryParams.Get("limit"))
+	param.Offset, _ = strconv.Atoi(queryParams.Get("offset"))
+
+	products, err := h.productSvc.GetProductSKU(r.Context(), param)
+	if err != nil {
+		code, msg := ierr.TranslateError(err)
+		http.Error(w, msg, code)
+		return
+	}
+
+	successRes := response.SuccessReponse{}
+	successRes.Message = "success"
+	successRes.Data = products
+
+	json.NewEncoder(w).Encode(successRes)
+	w.WriteHeader(http.StatusOK)
 }

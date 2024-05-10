@@ -38,3 +38,17 @@ func (p *ProductService) Create(ctx context.Context, body dto.ReqCreateProduct) 
 
 	return http.StatusOK, global_constant.SUCCESS_REGISTER_USER, product, nil
 }
+
+func (p *ProductService) GetProductSKU(ctx context.Context, param dto.ReqParamProductSKUGet) ([]dto.ResProductSKUGet, error) {
+	err := p.validator.Struct(param)
+	if err != nil {
+		return nil, ierr.ErrBadRequest
+	}
+
+	res, err := p.repo.Product.GetProductSKU(ctx, param)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}

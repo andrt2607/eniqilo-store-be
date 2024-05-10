@@ -86,34 +86,3 @@ func (cr *customerRepo) GetCustomer(ctx context.Context, param dto.ReqParamCusto
 
 	return results, nil
 }
-
-// func (cr *customerRepo) GetCatByID(ctx context.Context, id, sub string) (dto.ResCustomerGet, error) {
-// 	q := `SELECT id,
-// 		name,
-// 		race,
-// 		sex,
-// 		age_in_month,
-// 		description,
-// 		image_urls,
-// 		EXISTS (
-// 			SELECT 1 FROM match_customers m WHERE m.user_customer_id = c.id AND m.user_id = $1
-// 		) AS has_matched,
-// 		created_at
-// 	FROM cats c WHERE id = $2`
-
-// 	var imageUrl sql.NullString
-// 	var createdAt int64
-// 	var description string
-
-// 	result := dto.ResCustomerGet{}
-// 	err := cr.conn.QueryRow(ctx, q, sub, id).Scan(&result.ID, &result.Name, &result.Race, &result.Sex, &result.AgeInMonth, &description, &imageUrl, &result.HasMatched, &createdAt)
-// 	if err != nil {
-// 		return dto.ResCustomerGet{}, err
-// 	}
-
-// 	result.ImageUrls = strings.Split(imageUrl.String, ",")
-// 	result.CreatedAt = timepkg.TimeToISO8601(time.Unix(createdAt, 0))
-// 	result.Description = description
-
-// 	return result, nil
-// }
