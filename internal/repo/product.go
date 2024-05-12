@@ -63,7 +63,7 @@ func (p *productRepo) Insert(ctx context.Context, product dto.ReqCreateProduct) 
 
 	return dto.ResCreateProduct{
 		ID:        insertedRow.ID,
-		CreatedAt: insertedRow.CreatedAt.Format(time.RFC3339),
+		CreatedAt: insertedRow.CreatedAt.Format("2006-01-02T15:04:05.000Z"),
 	}, nil
 }
 
@@ -117,8 +117,10 @@ func (p *productRepo) Get(ctx context.Context, param dto.ReqParamProductGet) ([]
 		query.WriteString(fmt.Sprintf("AND is_available = '%s' ", param.IsAvailable))
 	}
 	if param.Category != "" {
+		fmt.Println("masuk", param.Category)
 		switch dto.Category(param.Category) {
 		case dto.Clothing:
+			fmt.Println("masuk", dto.Clothing)
 			query.WriteString(fmt.Sprintf("AND category = '%s' ", param.Category))
 		case dto.Accessories:
 			query.WriteString(fmt.Sprintf("AND category = '%s' ", param.Category))
@@ -134,40 +136,42 @@ func (p *productRepo) Get(ctx context.Context, param dto.ReqParamProductGet) ([]
 	} else if param.InStock == "false" {
 		query.WriteString("AND stock = 0 ")
 	}
-	// var orderByCreatedAt bool
-	// if param.CreatedAt != "" {
-	// 	orderByCreatedAt = true
-	// 	if param.CreatedAt == "asc" {
-	// 		query.WriteString("ORDER BY created_at ASC ")
-	// 	} else {
-	// 		query.WriteString("ORDER BY created_at DESC ")
-	// 	}
-	// }
-
-	// if param.Price != "" {
-	// 	if orderByCreatedAt {
-	// 		query.WriteString(", ")
-	// 	} else {
-	// 		query.WriteString("ORDER BY ")
-	// 	}
-	// 	if param.Price == "asc" {
-	// 		query.WriteString("price ASC ")
-	// 	} else {
-	// 		query.WriteString("price DESC ")
-	// 	}
-	// }
-
-	if param.CreatedAt == "asc" {
-		query.WriteString("ORDER BY created_at ASC ")
-	} else {
-		query.WriteString("ORDER BY created_at DESC ")
+	var orderByCreatedAt bool
+	if param.CreatedAt != "" {
+		orderByCreatedAt = true
+		if param.CreatedAt == "asc" {
+			query.WriteString("ORDER BY created_at ASC ")
+		} else {
+			query.WriteString("ORDER BY created_at DESC ")
+		}
 	}
 
-	if param.Price == "asc" {
-		query.WriteString(", price ASC ")
-	} else if param.Price == "desc" {
-		query.WriteString(", price DESC ")
+	if param.Price != "" {
+		if orderByCreatedAt {
+			query.WriteString(", ")
+		} else {
+			query.WriteString("ORDER BY ")
+		}
+		if param.Price == "asc" {
+			query.WriteString("price ASC ")
+		} else if param.Price == "asc" {
+			query.WriteString("price DESC ")
+		}
 	}
+
+	// if param.CreatedAt == "asc" {
+	// 	query.WriteString("ORDER BY created_at ASC ")
+	// } else {
+	// 	query.WriteString("ORDER BY created_at DESC ")
+	// }
+
+	// fmt.Println(param.Price)
+
+	// if param.Price == "asc" {
+	// 	query.WriteString(", price ASC ")
+	// } else if param.Price == "desc" {
+	// 	query.WriteString(", price DESC ")
+	// }
 
 	// limit and offset
 	if param.Limit == 0 {
@@ -199,7 +203,7 @@ func (p *productRepo) Get(ctx context.Context, param dto.ReqParamProductGet) ([]
 			&product.IsAvailable,
 			&createdAt,
 		)
-		product.CreatedAt = createdAt.Format(time.RFC3339)
+		product.CreatedAt = createdAt.Format("2006-01-02T15:04:05.000Z")
 		if err != nil {
 			return nil, err
 		}

@@ -121,18 +121,21 @@ func (cr *checkoutRepo) PostCheckout(ctx context.Context, checkout dto.ReqChecko
 
 	return http.StatusOK, dto.ResCreateProduct{
 		ID:        OrderID,
-		CreatedAt: CreatedAt.Format(time.RFC3339),
+		CreatedAt: CreatedAt.Format("2006-01-02T15:04:05.000Z"),
 	}, nil
 }
 
 func (cr *checkoutRepo) GetCheckout(ctx context.Context, param dto.ReqParamCheckoutGet) ([]dto.ResCheckoutGet, error) {
 	var query strings.Builder
+	var orderTime time.Time
 
-	query.WriteString("SELECT id, customer_id, paid, change FROM order_product WHERE 1=1 ")
+	query.WriteString("SELECT id, customer_id, paid, change, created_at FROM order_product WHERE 1=1 ")
 
 	if param.CustomerId != "" {
 		query.WriteString(fmt.Sprintf("AND customer_id = '+%s' ", param.CustomerId))
 	}
+
+	fmt.Println(param.CreatedAt)
 
 	if param.CreatedAt == "asc" {
 		query.WriteString("ORDER BY created_at ASC ")
@@ -161,7 +164,9 @@ func (cr *checkoutRepo) GetCheckout(ctx context.Context, param dto.ReqParamCheck
 			&result.OrderId,
 			&result.CustomerId,
 			&result.Paid,
-			&result.Change)
+			&result.Change,
+			&orderTime,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -171,6 +176,7 @@ func (cr *checkoutRepo) GetCheckout(ctx context.Context, param dto.ReqParamCheck
 			return nil, err
 		}
 		result.ProductDetails = orderDetail
+		result.CreatedAt = orderTime.Format("2006-01-02T15:04:05.000Z")
 
 		results = append(results, result)
 	}
