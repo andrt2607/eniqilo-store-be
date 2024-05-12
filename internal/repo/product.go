@@ -67,6 +67,36 @@ func (p *productRepo) Insert(ctx context.Context, product dto.ReqCreateProduct) 
 	}, nil
 }
 
+func (p *productRepo) UpdateByID(ctx context.Context, productId string, product dto.ReqCreateProduct) (interface{}, error) {
+	q := `UPDATE product SET name = $1, sku = $2, category = $3, imageUrl = $4, notes = $5, price = $6, stock = $7, location = $8, is_available = $9 WHERE id = $10 RETURNING id`
+
+	var rowAffected string
+
+	err := p.conn.QueryRow(ctx, q,
+		product.Name,
+		product.SKU,
+		product.Category,
+		product.ImageURL,
+		product.Notes,
+		product.Price,
+		product.Stock,
+		product.Location,
+		product.IsAvailable,
+		productId,
+	).Scan(
+		&rowAffected,
+	)
+
+	if err != nil {
+		ierr.LogErrorWithLocation(err)
+		if rowAffected == "" {
+			return nil, ierr.ErrNotFound
+		}
+	}
+
+	return struct{ ID string }{ID: rowAffected}, nil
+}
+
 func (p *productRepo) Get(ctx context.Context, param dto.ReqParamProductGet) ([]dto.ResGetProduct, error) {
 	var query strings.Builder
 

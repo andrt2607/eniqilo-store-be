@@ -49,6 +49,7 @@ func (h *Handler) registRoute() {
 
 		r.Get("/v1/product", productHandler.GetProduct)
 		r.Post("/v1/product", productHandler.Create)
+		r.Put("/v1/product/{id}", productHandler.UpdateByID)
 		r.Delete("/v1/product/{id}", productHandler.DeleteProduct)
 
 		r.Post("/v1/customer/register", customerHandler.Register)
