@@ -48,5 +48,5 @@ func (h *staffHandler) Login(w http.ResponseWriter, r *http.Request) {
 		response.RespondWithError(w, statusCode, res)
 		return
 	}
-	response.RespondWithJSON(w, http.StatusCreated, message, res)
+	response.RespondWithJSON(w, statusCode, message, res)
 }

@@ -1,5 +1,11 @@
 package dto
 
+import (
+	"regexp"
+
+	"github.com/go-playground/validator/v10"
+)
+
 type Category string
 
 const (
@@ -21,12 +27,12 @@ type (
 		Name        string `json:"name" validate:"required,min=1,max=30"`
 		SKU         string `json:"sku" validate:"required,min=1,max=30"`
 		Category    string `json:"category" validate:"required,oneof=Clothing Accessories Footwear Beverages"`
-		ImageURL    string `json:"imageUrl" validate:"required"`
+		ImageURL    string `json:"imageUrl" validate:"required,url,imageurl"`
 		Notes       string `json:"notes" validate:"required,min=1,max=200"`
 		Price       int    `json:"price" validate:"required,min=1"`
 		Stock       int    `json:"stock" validate:"required,min=0,max=100000"`
 		Location    string `json:"location" validate:"required,min=1,max=200"`
-		IsAvailable bool   `json:"isAvailable" validate:"required"`
+		IsAvailable bool   `json:"isAvailable"`
 	}
 
 	ResCreateProduct struct {
@@ -59,7 +65,7 @@ type (
 		Price       Sort     `json:"price"`
 		InStock     string   `json:"inStock"`
 		CreatedAt   Sort     `json:"createdAt"`
-  }
+	}
 	ReqParamProductSKUGet struct {
 		Name      string `json:"phoneNumber"`
 		SKU       string `json:"sku"`
@@ -80,6 +86,17 @@ type (
 		Price     int    `json:"price"`
 		Location  string `json:"location"`
 		CreatedAt string `json:"createdAt"`
-
 	}
 )
+
+func IsValidImagePath(fl validator.FieldLevel) bool {
+	// Regular expression to match HTTP or HTTPS image URLs
+	regex := `^(http|https):\/\/.*\.(png|jpg|jpeg|gif|bmp)$`
+
+	// Compile the regular expression
+	re := regexp.MustCompile(regex)
+	imageUrl := fl.Field().String()
+
+	// Match the path against the regular expression
+	return re.MatchString(imageUrl)
+}

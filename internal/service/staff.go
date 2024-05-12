@@ -27,13 +27,7 @@ func newStaffService(repo *repo.Repo, validator *validator.Validate, cfg *cfg.Cf
 }
 
 func (u *StaffService) Register(ctx context.Context, body dto.ReqStaffRegister) (int, string, interface{}, error) {
-	//check if phone number already exist
-	checkedStaff, _ := u.repo.Staff.GetByPhoneNumber(ctx, body.PhoneNumber)
-	if checkedStaff.PhoneNumber == body.PhoneNumber {
-		existPhoneError := errors.New("phone number already exist")
-		ierr.LogErrorWithLocation(existPhoneError)
-		return http.StatusConflict, global_constant.EXISTING_PHONE_NUMBER, existPhoneError.Error(), existPhoneError
-	}
+
 	//register custom validation phone
 	errPhone := u.validator.RegisterValidation("phone", dto.PhoneValidation)
 	if errPhone != nil {
@@ -45,6 +39,14 @@ func (u *StaffService) Register(ctx context.Context, body dto.ReqStaffRegister) 
 	if err != nil {
 		ierr.LogErrorWithLocation(err)
 		return http.StatusBadRequest, global_constant.FAIL_VALIDATE_REQ_BODY, err.Error(), err
+	}
+
+	//check if phone number already exist
+	checkedStaff, _ := u.repo.Staff.GetByPhoneNumber(ctx, body.PhoneNumber)
+	if checkedStaff.PhoneNumber == body.PhoneNumber {
+		existPhoneError := errors.New("phone number already exist")
+		ierr.LogErrorWithLocation(existPhoneError)
+		return http.StatusConflict, global_constant.EXISTING_PHONE_NUMBER, existPhoneError.Error(), existPhoneError
 	}
 
 	staff := body.ToEntity(u.cfg.BCryptSalt)

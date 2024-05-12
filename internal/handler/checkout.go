@@ -25,15 +25,15 @@ func newCheckoutHandler(checkoutSvc *service.CheckoutService) *checkoutHandler {
 
 func (h *checkoutHandler) PostCheckout(w http.ResponseWriter, r *http.Request) {
 
-	_, _, err := jwtauth.FromContext(r.Context())
-	if err != nil {
-		http.Error(w, "failed to get token from request", http.StatusBadRequest)
-		return
-	}
+	// _, _, err := jwtauth.FromContext(r.Context())
+	// if err != nil {
+	// 	http.Error(w, "failed to get token from request", http.StatusBadRequest)
+	// 	return
+	// }
 
 	var req dto.ReqCheckoutPost
 
-	err = json.NewDecoder(r.Body).Decode(&req)
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		response.RespondWithError(w, http.StatusBadRequest, global_constant.FAILED_PARSE_REQ_BODY)
 		return
