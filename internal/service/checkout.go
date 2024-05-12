@@ -54,6 +54,7 @@ func (c *CheckoutService) PostCheckout(ctx context.Context, body dto.ReqCheckout
 	}
 
 	responseCode, responseData, errPost := c.repo.Checkout.PostCheckout(ctx, body)
+	fmt.Println(responseCode)
 	if errPost != nil {
 		ierr.LogErrorWithLocation(errPost)
 		return responseCode, global_constant.FAIL_VALIDATE_REQ_BODY, errPost.Error(), errPost
