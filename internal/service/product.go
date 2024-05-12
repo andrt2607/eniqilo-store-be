@@ -24,6 +24,14 @@ func newProductService(repo *repo.Repo, validator *validator.Validate, cfg *cfg.
 }
 
 func (p *ProductService) Create(ctx context.Context, body dto.ReqCreateProduct) (int, string, interface{}, error) {
+
+	//register custom validation phone
+	errImageUrl := p.validator.RegisterValidation("imageurl", dto.IsValidImagePath)
+	if errImageUrl != nil {
+		ierr.LogErrorWithLocation(errImageUrl)
+		return http.StatusBadRequest, global_constant.FAIL_VALIDATE_REQ_BODY, errImageUrl.Error(), errImageUrl
+	}
+
 	err := p.validator.Struct(body)
 	if err != nil {
 		ierr.LogErrorWithLocation(err)

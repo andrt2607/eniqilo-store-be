@@ -130,31 +130,51 @@ func (p *productRepo) Get(ctx context.Context, param dto.ReqParamProductGet) ([]
 		}
 	}
 	if param.InStock == "true" {
-		query.WriteString(fmt.Sprintf("AND stock > 0 "))
+		query.WriteString("AND stock > 0 ")
 	} else if param.InStock == "false" {
-		query.WriteString(fmt.Sprintf("AND stock = 0 "))
+		query.WriteString("AND stock = 0 ")
 	}
-	var orderByCreatedAt bool
-	if param.CreatedAt != "" {
-		orderByCreatedAt = true
-		if param.CreatedAt == "asc" {
-			query.WriteString("ORDER BY created_at ASC ")
-		} else {
-			query.WriteString("ORDER BY created_at DESC ")
-		}
+	// var orderByCreatedAt bool
+	// if param.CreatedAt != "" {
+	// 	orderByCreatedAt = true
+	// 	if param.CreatedAt == "asc" {
+	// 		query.WriteString("ORDER BY created_at ASC ")
+	// 	} else {
+	// 		query.WriteString("ORDER BY created_at DESC ")
+	// 	}
+	// }
+
+	// if param.Price != "" {
+	// 	if orderByCreatedAt {
+	// 		query.WriteString(", ")
+	// 	} else {
+	// 		query.WriteString("ORDER BY ")
+	// 	}
+	// 	if param.Price == "asc" {
+	// 		query.WriteString("price ASC ")
+	// 	} else {
+	// 		query.WriteString("price DESC ")
+	// 	}
+	// }
+
+	if param.CreatedAt == "asc" {
+		query.WriteString("ORDER BY created_at ASC ")
+	} else {
+		query.WriteString("ORDER BY created_at DESC ")
 	}
-	if param.Price != "" {
-		if orderByCreatedAt {
-			query.WriteString(", ")
-		} else {
-			query.WriteString("ORDER BY ")
-		}
-		if param.Price == "asc" {
-			query.WriteString("price ASC ")
-		} else {
-			query.WriteString("price DESC ")
-		}
+
+	if param.Price == "asc" {
+		query.WriteString(", price ASC ")
+	} else if param.Price == "desc" {
+		query.WriteString(", price DESC ")
 	}
+
+	// limit and offset
+	if param.Limit == 0 {
+		param.Limit = 5
+	}
+
+	query.WriteString(fmt.Sprintf("LIMIT %d OFFSET %d", param.Limit, param.Offset))
 
 	fmt.Println("query: ", query.String())
 	rows, err := p.conn.Query(ctx, query.String())
@@ -200,6 +220,8 @@ func (cr *productRepo) GetProductSKU(ctx context.Context, param dto.ReqParamProd
 
 	if param.Stock == "true" {
 		query.WriteString("AND stock > 0 ")
+	} else {
+		query.WriteString("AND stock = 0 ")
 	}
 
 	if param.Name != "" {
@@ -262,7 +284,9 @@ func (cr *productRepo) GetProductSKU(ctx context.Context, param dto.ReqParamProd
 }
 
 func (p *productRepo) DeleteProduct(ctx context.Context, id string) error {
-	q := `UPDATE product SET deleted_at = now() WHERE id = $1 RETURNING id`
+	// q := `UPDATE product SET deleted_at = now() WHERE id = $1 RETURNING id`
+
+	q := `DELETE FROM product WHERE id = $1 RETURNING id`
 
 	res, err := p.conn.Exec(ctx, q, id)
 	if err != nil {
