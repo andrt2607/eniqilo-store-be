@@ -55,6 +55,6 @@ func (h *Handler) registRoute() {
 		r.Post("/v1/customer/register", customerHandler.Register)
 		r.Get("/v1/customer", customerHandler.GetCustomer)
 		r.Post("/v1/product/checkout", checkoutHandler.PostCheckout)
-		r.Get("/v1/product/checkout", checkoutHandler.GetCheckout)
+		r.Get("/v1/product/checkout/history", checkoutHandler.GetCheckout)
 	})
 }
