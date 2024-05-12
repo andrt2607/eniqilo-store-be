@@ -26,26 +26,11 @@ func newCheckoutService(repo *repo.Repo, validator *validator.Validate, cfg *cfg
 
 func (c *CheckoutService) PostCheckout(ctx context.Context, body dto.ReqCheckoutPost) (int, string, interface{}, error) {
 
-	fmt.Println(body)
-	// //register custom validation phone
-	errAmount := c.validator.RegisterValidation("isvalidamount", dto.IsValidAmount)
-	if errAmount != nil {
-		ierr.LogErrorWithLocation(errAmount)
-		return http.StatusBadRequest, global_constant.FAIL_VALIDATE_REQ_BODY, errAmount.Error(), errAmount
-	}
-	errInteger := c.validator.RegisterValidation("isvalidinteger", dto.IsValidInteger)
-	if errInteger != nil {
-		ierr.LogErrorWithLocation(errInteger)
-		return http.StatusBadRequest, global_constant.FAIL_VALIDATE_REQ_BODY, errInteger.Error(), errInteger
-	}
-
-	fmt.Println("masuk sini")
 	err := c.validator.Struct(body)
 	if err != nil {
 		ierr.LogErrorWithLocation(err)
 		return http.StatusBadRequest, global_constant.FAIL_VALIDATE_REQ_BODY, err.Error(), err
 	}
-	fmt.Println("masuk bos")
 
 	responseCodeValidation, err := c.repo.Checkout.PostValidateCheckout(ctx, body)
 	if err != nil {
@@ -54,6 +39,7 @@ func (c *CheckoutService) PostCheckout(ctx context.Context, body dto.ReqCheckout
 	}
 
 	responseCode, responseData, errPost := c.repo.Checkout.PostCheckout(ctx, body)
+	fmt.Println(responseCode)
 	if errPost != nil {
 		ierr.LogErrorWithLocation(errPost)
 		return responseCode, global_constant.FAIL_VALIDATE_REQ_BODY, errPost.Error(), errPost

@@ -1,6 +1,6 @@
 package global_constant
 
-const SUCCESS = "Success"
+const SUCCESS = "success"
 const SUCCESS_REGISTER_USER = "User registered successfully"
 const SUCCESS_LOGIN_USER = "User logged in successfully"
 const SUCCESS_CREATE_PRODUCT = "Product created successfully"
