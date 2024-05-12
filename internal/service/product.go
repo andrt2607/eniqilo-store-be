@@ -36,7 +36,26 @@ func (p *ProductService) Create(ctx context.Context, body dto.ReqCreateProduct) 
 		return http.StatusInternalServerError, global_constant.FAIL_VALIDATE_REQ_BODY, err.Error(), err
 	}
 
-	return http.StatusOK, global_constant.SUCCESS_REGISTER_USER, product, nil
+	return http.StatusOK, global_constant.SUCCESS_CREATE_PRODUCT, product, nil
+}
+
+func (p *ProductService) UpdateByID(ctx context.Context, productId string, body dto.ReqCreateProduct) (int, string, interface{}, error) {
+	err := p.validator.Struct(body)
+	if err != nil {
+		ierr.LogErrorWithLocation(err)
+		return http.StatusBadRequest, global_constant.FAIL_VALIDATE_REQ_BODY, err.Error(), err
+	}
+
+	product, err := p.repo.Product.UpdateByID(ctx, productId, body)
+	if err != nil {
+		ierr.LogErrorWithLocation(err)
+		if err == ierr.ErrNotFound {
+			return http.StatusNotFound, global_constant.NOT_FOUND, err.Error(), err
+		}
+		return http.StatusInternalServerError, global_constant.NOT_FOUND, err.Error(), err
+	}
+
+	return http.StatusOK, global_constant.SUCCESS_UPDATE_PRODUCT, product, nil
 }
 
 func (p *ProductService) Get(ctx context.Context, param dto.ReqParamProductGet) (int, string, interface{}, error) {

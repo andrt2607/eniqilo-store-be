@@ -39,6 +39,23 @@ func (h *productHandler) Create(w http.ResponseWriter, r *http.Request) {
 	response.RespondWithJSON(w, http.StatusCreated, message, res)
 }
 
+func (h *productHandler) UpdateByID(w http.ResponseWriter, r *http.Request) {
+	var id = chi.URLParam(r, "id")
+	var req dto.ReqCreateProduct
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		response.RespondWithError(w, http.StatusBadRequest, global_constant.FAILED_PARSE_REQ_BODY)
+		return
+	}
+	statusCode, message, res, err := h.productSvc.UpdateByID(r.Context(), id, req)
+	if err != nil {
+		response.RespondWithError(w, statusCode, res)
+		return
+	}
+	response.RespondWithJSON(w, http.StatusOK, message, res)
+}
+
 func (h *productHandler) GetProduct(w http.ResponseWriter, r *http.Request) {
 	_, _, err := jwtauth.FromContext(r.Context())
 	if err != nil {
