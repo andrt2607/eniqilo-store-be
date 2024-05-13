@@ -67,14 +67,14 @@ type (
 		CreatedAt   Sort     `json:"createdAt"`
 	}
 	ReqParamProductSKUGet struct {
-		Name      string `json:"phoneNumber"`
-		SKU       string `json:"sku"`
-		Price     string `json:"price"`
-		Category  string `json:"category"`
-		Stock     string `json:"inStock"`
-		CreatedAt string `json:"createdAt"`
-		Limit     int    `json:"limit"`
-		Offset    int    `json:"offset"`
+		Name      string   `json:"phoneNumber"`
+		SKU       string   `json:"sku"`
+		Price     Sort     `json:"price"`
+		Category  Category `json:"category"`
+		Stock     string   `json:"inStock"`
+		CreatedAt Sort     `json:"createdAt"`
+		Limit     int      `json:"limit"`
+		Offset    int      `json:"offset"`
 	}
 	ResProductSKUGet struct {
 		Id        string `json:"id,omitempty"`
