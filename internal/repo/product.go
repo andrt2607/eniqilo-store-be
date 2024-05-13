@@ -12,8 +12,6 @@ import (
 	"eniqilo-store-be/internal/dto"
 	"eniqilo-store-be/internal/ierr"
 
-	validator "eniqilo-store-be/pkg/validator"
-
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -136,28 +134,58 @@ func (p *productRepo) Get(ctx context.Context, param dto.ReqParamProductGet) ([]
 	} else if param.InStock == "false" {
 		query.WriteString("AND stock = 0 ")
 	}
-	var orderByCreatedAt bool
+
+	fmt.Println("cek sini", param.Price)
+
+	var orderByPrice bool
+	if param.Price != "" {
+		orderByPrice = true
+		if param.Price == "asc" {
+			query.WriteString("ORDER BY price ASC ")
+		} else if param.Price == "desc" {
+			query.WriteString("ORDER BY price DESC ")
+		}
+	}
+	fmt.Println("cek sini", param.CreatedAt)
 	if param.CreatedAt != "" {
-		orderByCreatedAt = true
+		if orderByPrice {
+			query.WriteString(", ")
+		} else {
+			query.WriteString("ORDER BY ")
+		}
 		if param.CreatedAt == "asc" {
-			query.WriteString("ORDER BY created_at ASC ")
+			query.WriteString("created_at ASC ")
+		}
+	} else {
+		if orderByPrice {
+			query.WriteString(", created_at DESC ")
 		} else {
 			query.WriteString("ORDER BY created_at DESC ")
 		}
 	}
 
-	if param.Price != "" {
-		if orderByCreatedAt {
-			query.WriteString(", ")
-		} else {
-			query.WriteString("ORDER BY ")
-		}
-		if param.Price == "asc" {
-			query.WriteString("price ASC ")
-		} else if param.Price == "asc" {
-			query.WriteString("price DESC ")
-		}
-	}
+	// var orderByCreatedAt bool
+	// if param.CreatedAt != "" {
+	// 	orderByCreatedAt = true
+	// 	if param.CreatedAt == "asc" {
+	// 		query.WriteString("ORDER BY created_at ASC ")
+	// 	} else {
+	// 		query.WriteString("ORDER BY created_at DESC ")
+	// 	}
+	// }
+
+	// if param.Price != "" {
+	// 	if orderByCreatedAt {
+	// 		query.WriteString(", ")
+	// 	} else {
+	// 		query.WriteString("ORDER BY ")
+	// 	}
+	// 	if param.Price == "asc" {
+	// 		query.WriteString("price ASC ")
+	// 	} else if param.Price == "asc" {
+	// 		query.WriteString("price DESC ")
+	// 	}
+	// }
 
 	// if param.CreatedAt == "asc" {
 	// 	query.WriteString("ORDER BY created_at ASC ")
@@ -214,7 +242,7 @@ func (p *productRepo) Get(ctx context.Context, param dto.ReqParamProductGet) ([]
 
 func (cr *productRepo) GetProductSKU(ctx context.Context, param dto.ReqParamProductSKUGet) ([]dto.ResProductSKUGet, error) {
 	var query strings.Builder
-	categoryProduct := []string{"Clothing", "Accessories", "Footwear", "Beverages"}
+	// categoryProduct := []string{"Clothing", "Accessories", "Footwear", "Beverages"}
 
 	query.WriteString(`SELECT id, name, sku, category, imageUrl, stock, price, location, to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z') FROM product WHERE is_available = true `)
 
@@ -224,7 +252,7 @@ func (cr *productRepo) GetProductSKU(ctx context.Context, param dto.ReqParamProd
 
 	if param.Stock == "true" {
 		query.WriteString("AND stock > 0 ")
-	} else {
+	} else if param.Stock == "false" {
 		query.WriteString("AND stock = 0 ")
 	}
 
@@ -232,21 +260,89 @@ func (cr *productRepo) GetProductSKU(ctx context.Context, param dto.ReqParamProd
 		query.WriteString(fmt.Sprintf("AND LOWER(name) LIKE LOWER('%s') ", fmt.Sprintf("%%%s%%", param.Name)))
 	}
 
-	if validator.IsInArray(param.Category, categoryProduct) {
-		query.WriteString(fmt.Sprintf("AND category = '%s') ", param.Category))
+	// if validator.IsInArray(param.Category, categoryProduct) {
+	// 	query.WriteString(fmt.Sprintf("AND category = '%s') ", param.Category))
+	// }
+	fmt.Println(param.Category)
+	if param.Category != "" {
+		fmt.Println("masuk", param.Category)
+		switch dto.Category(param.Category) {
+		case dto.Clothing:
+			fmt.Println("masuk", dto.Clothing)
+			query.WriteString(fmt.Sprintf("AND category = '%s' ", param.Category))
+		case dto.Accessories:
+			query.WriteString(fmt.Sprintf("AND category = '%s' ", param.Category))
+		case dto.Footwear:
+			query.WriteString(fmt.Sprintf("AND category = '%s' ", param.Category))
+		case dto.Beverages:
+			query.WriteString(fmt.Sprintf("AND category = '%s' ", param.Category))
+		default:
+		}
 	}
 
-	if param.CreatedAt == "asc" {
-		query.WriteString("ORDER BY created_at ASC ")
+	var orderByPrice bool
+	fmt.Println("cek sini", param.Price)
+	if param.Price != "" {
+		orderByPrice = true
+		if param.Price == "asc" {
+			query.WriteString("ORDER BY price ASC ")
+		} else if param.Price == "desc" {
+			query.WriteString("ORDER BY price DESC ")
+		}
+	}
+
+	fmt.Println("cek sini", param.CreatedAt)
+	if param.CreatedAt != "" {
+		if orderByPrice {
+			query.WriteString(", ")
+		} else {
+			query.WriteString("ORDER BY ")
+		}
+		if param.CreatedAt == "asc" {
+			query.WriteString("created_at ASC ")
+		}
 	} else {
-		query.WriteString("ORDER BY created_at DESC ")
+		if orderByPrice {
+			query.WriteString(", created_at DESC ")
+		} else {
+			query.WriteString("ORDER BY created_at DESC ")
+		}
 	}
 
-	if param.Price == "asc" {
-		query.WriteString(", price ASC ")
-	} else if param.Price == "desc" {
-		query.WriteString(", price DESC ")
-	}
+	// var orderByCreatedAt bool
+	// if param.CreatedAt != "" {
+	// 	orderByCreatedAt = true
+	// 	if param.CreatedAt == "asc" {
+	// 		query.WriteString("ORDER BY created_at ASC ")
+	// 	} else {
+	// 		query.WriteString("ORDER BY created_at DESC ")
+	// 	}
+	// }
+
+	// if param.Price != "" {
+	// 	if orderByCreatedAt {
+	// 		query.WriteString(", ")
+	// 	} else {
+	// 		query.WriteString("ORDER BY ")
+	// 	}
+	// 	if param.Price == "asc" {
+	// 		query.WriteString("price ASC ")
+	// 	} else if param.Price == "asc" {
+	// 		query.WriteString("price DESC ")
+	// 	}
+	// }
+
+	// if param.CreatedAt == "asc" {
+	// 	query.WriteString("ORDER BY created_at ASC ")
+	// } else {
+	// 	query.WriteString("ORDER BY created_at DESC ")
+	// }
+
+	// if param.Price == "asc" {
+	// 	query.WriteString(", price ASC ")
+	// } else if param.Price == "desc" {
+	// 	query.WriteString(", price DESC ")
+	// }
 
 	// limit and offset
 	if param.Limit == 0 {
@@ -254,6 +350,8 @@ func (cr *productRepo) GetProductSKU(ctx context.Context, param dto.ReqParamProd
 	}
 
 	query.WriteString(fmt.Sprintf("LIMIT %d OFFSET %d", param.Limit, param.Offset))
+
+	fmt.Println("ini query", query.String())
 	rows, err := cr.conn.Query(ctx, query.String()) // Replace $1 with sub
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok {

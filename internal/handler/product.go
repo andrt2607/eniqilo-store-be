@@ -95,8 +95,9 @@ func (h *productHandler) GetProductSKU(w http.ResponseWriter, r *http.Request) {
 	param.Name = queryParams.Get("name")
 	param.SKU = queryParams.Get("sku")
 	param.Stock = queryParams.Get("inStock")
-	param.Price = queryParams.Get("price")
-	param.CreatedAt = queryParams.Get("createdAt")
+	param.Price = dto.Sort(queryParams.Get("price"))
+	param.Category = dto.Category(queryParams.Get("category"))
+	param.CreatedAt = dto.Sort(queryParams.Get("createdAt"))
 	param.Limit, _ = strconv.Atoi(queryParams.Get("limit"))
 	param.Offset, _ = strconv.Atoi(queryParams.Get("offset"))
 
