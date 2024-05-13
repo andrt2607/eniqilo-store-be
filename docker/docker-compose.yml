@@ -14,6 +14,26 @@ services:
       POSTGRES_DB: ${DB_NAME}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+  eniqilo_app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        IMAGE_TAG: "yuyuhuyuhuuya/eniqilo_app:1.0"
+    container_name: eniqilo_app
+    hostname: eniqilo_app
+    ports:
+      - "8080:8080"
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT}
+      DB_NAME: ${DB_NAME}
+      DB_PORT: ${DB_PORT}
+      DB_HOST: ${DB_HOST}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_PARAMS: ${DB_PARAMS}
+      JWT_SECRET: ${JWT_SECRET}
+      BCRYPT_SALT: ${BCRYPT_SALT}      
 
 volumes:
   postgres_data:
