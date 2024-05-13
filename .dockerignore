@@ -1,0 +1,6 @@
+.env
+w1key
+ap-southeast-1-bundle.pem
+projectsprint.key
+main_*
+docker*
