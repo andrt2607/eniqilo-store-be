@@ -14,10 +14,10 @@ services:
       POSTGRES_DB: ${DB_NAME}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-  eniqilo_app:
+  app:
     build:
-      context: ..
-      dockerfile: docker/Dockerfile
+      context: .
+      dockerfile: Dockerfile
       args:
         IMAGE_TAG: "yuyuhuyuhuuya/eniqilo_app:1.0"
     container_name: eniqilo_app
